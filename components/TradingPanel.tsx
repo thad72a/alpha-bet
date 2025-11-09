@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAccount } from 'wagmi'
+import { useAccount, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { showErrorToast, showSuccessToast, showLoadingToast, dismissToast } from '@/lib/errorHandling'
+import { BETTING_CONTRACT_ADDRESS, BETTING_ABI } from '@/lib/contracts'
+import { AlertCircle } from 'lucide-react'
 
 interface TradingPanelProps {
   market: any
@@ -17,21 +20,117 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const [selectedOutcome, setSelectedOutcome] = useState<'yes' | 'no'>('yes')
   const [amount, setAmount] = useState<string>('0')
   const [balance] = useState(0)
+  const [isPurchasing, setIsPurchasing] = useState(false)
+  const [loadingToastId, setLoadingToastId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const presetAmounts = [1, 20, 100]
 
   const handlePresetAmount = (preset: number) => {
     setAmount(preset.toString())
+    setError(null)
   }
 
   const handleMaxAmount = () => {
     setAmount(balance.toString())
+    setError(null)
   }
 
   const yesProbability = ((market.totalYesShares / (market.totalYesShares + market.totalNoShares)) * 100).toFixed(0)
   const noProbability = (100 - parseFloat(yesProbability)).toFixed(0)
 
   const estimatedShares = amount ? (parseFloat(amount) / (selectedOutcome === 'yes' ? parseFloat(yesProbability) : parseFloat(noProbability)) * 100).toFixed(2) : '0'
+
+  // Prepare contract write for purchasing shares with native TAO
+  const yesShares = selectedOutcome === 'yes' ? BigInt(Math.floor(parseFloat(amount || '0') * 1e18)) : BigInt(0)
+  const noShares = selectedOutcome === 'no' ? BigInt(Math.floor(parseFloat(amount || '0') * 1e18)) : BigInt(0)
+  const totalValue = yesShares + noShares
+
+  const { config, error: prepareError } = usePrepareContractWrite({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'purchaseShares',
+    args: [BigInt(market.id), yesShares, noShares],
+    value: totalValue, // Send native TAO with the transaction
+    enabled: Boolean(isConnected && amount && parseFloat(amount) > 0),
+  })
+
+  const { data: txData, write: purchaseShares, error: writeError, reset } = useContractWrite(config)
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransaction({
+    hash: txData?.hash,
+  })
+
+  // Handle transaction confirmation
+  useEffect(() => {
+    if (isConfirmed && loadingToastId) {
+      dismissToast(loadingToastId)
+      setLoadingToastId(null)
+      showSuccessToast(`Successfully purchased ${selectedOutcome.toUpperCase()} shares!`)
+      setIsPurchasing(false)
+      setAmount('0')
+      setError(null)
+    }
+  }, [isConfirmed, loadingToastId, selectedOutcome])
+
+  // Handle write errors
+  useEffect(() => {
+    if (writeError) {
+      if (loadingToastId) {
+        dismissToast(loadingToastId)
+        setLoadingToastId(null)
+      }
+      showErrorToast(writeError, 'Failed to purchase shares')
+      setIsPurchasing(false)
+      setError('Transaction failed. Please try again.')
+      setTimeout(() => {
+        setError(null)
+        reset()
+      }, 5000)
+    }
+  }, [writeError, loadingToastId, reset])
+
+  // Show prepare errors
+  useEffect(() => {
+    if (prepareError && isPurchasing) {
+      setError('Unable to prepare transaction. Please check your inputs.')
+      setIsPurchasing(false)
+    }
+  }, [prepareError, isPurchasing])
+
+  const handlePurchase = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Please enter a valid amount')
+      return
+    }
+
+    if (parseFloat(amount) > balance) {
+      setError('Insufficient balance')
+      return
+    }
+
+    if (!purchaseShares) {
+      setError('Unable to create transaction. Please try again.')
+      return
+    }
+
+    setError(null)
+    setIsPurchasing(true)
+
+    try {
+      const toastId = showLoadingToast(`Purchasing ${selectedOutcome.toUpperCase()} shares...`)
+      setLoadingToastId(toastId)
+      purchaseShares()
+    } catch (err: any) {
+      if (loadingToastId) {
+        dismissToast(loadingToastId)
+        setLoadingToastId(null)
+      }
+      showErrorToast(err, 'Failed to purchase shares')
+      setIsPurchasing(false)
+      setError('Failed to submit transaction')
+    }
+  }
 
   return (
     <Card className="premium-card">
@@ -160,6 +259,22 @@ export function TradingPanel({ market }: TradingPanelProps) {
           </div>
         )}
 
+        {/* Error Display */}
+        {error && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start space-x-2">
+            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-red-200">{error}</p>
+          </div>
+        )}
+
+        {/* Transaction Status */}
+        {isConfirming && (
+          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start space-x-2">
+            <div className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin flex-shrink-0"></div>
+            <p className="text-xs text-blue-200">Confirming transaction...</p>
+          </div>
+        )}
+
         {/* Action Button */}
         {!isConnected ? (
           <div className="pt-2">
@@ -183,10 +298,18 @@ export function TradingPanel({ market }: TradingPanelProps) {
           </Button>
         ) : (
           <Button 
+            onClick={handlePurchase}
             className="w-full btn-primary h-12 text-base font-semibold"
-            disabled={!amount || parseFloat(amount) === 0 || parseFloat(amount) > balance}
+            disabled={!amount || parseFloat(amount) === 0 || parseFloat(amount) > balance || isPurchasing || isConfirming}
           >
-            {activeTab === 'buy' ? 'Buy' : 'Sell'} {selectedOutcome === 'yes' ? 'Yes' : 'No'}
+            {isPurchasing || isConfirming ? (
+              <span className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>{isConfirming ? 'Confirming...' : 'Processing...'}</span>
+              </span>
+            ) : (
+              `${activeTab === 'buy' ? 'Buy' : 'Sell'} ${selectedOutcome === 'yes' ? 'Yes' : 'No'}`
+            )}
           </Button>
         )}
 

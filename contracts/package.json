@@ -6,8 +6,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy": "hardhat run scripts/deploy.js",
-    "deploy:localhost": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:testnet": "hardhat run scripts/deploy-bittensor.js --network bittensorTestnet",
+    "deploy:mainnet": "hardhat run scripts/deploy-bittensor.js --network bittensorMainnet",
     "node": "hardhat node"
   },
   "devDependencies": {
@@ -15,6 +15,7 @@
     "hardhat": "^2.17.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.3"
+    "@openzeppelin/contracts": "^4.9.3",
+    "dotenv": "^16.3.1"
   }
 }

@@ -1,20 +1,20 @@
 /**
  * Smart Contract Configuration
- * Deployed contract addresses and ABIs for the local Hardhat network
+ * Deployed contract addresses and ABIs for Bittensor network
  */
 
-import { BETTING_ABI, TAO_ABI } from './abis'
+import { BETTING_ABI } from './abis'
 
-// Deployed contract addresses (local Hardhat network)
+// Deployed contract addresses
 export const BETTING_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_BETTING_CONTRACT_ADDRESS as `0x${string}`
-export const TAO_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TAO_CONTRACT_ADDRESS as `0x${string}`
 
-// Export ABIs
-export { BETTING_ABI, TAO_ABI }
+// Export ABI
+export { BETTING_ABI }
 
 // Network configuration
-export const HARDHAT_CHAIN_ID = 1337
-export const HARDHAT_RPC_URL = process.env.NEXT_PUBLIC_RPC_URL as string
+export const BITTENSOR_TESTNET_CHAIN_ID = 945
+export const BITTENSOR_MAINNET_CHAIN_ID = 966
+export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://test.chain.opentensor.ai'
 
 // Contract configuration object for easy import
 export const contracts = {
@@ -22,11 +22,9 @@ export const contracts = {
     address: BETTING_CONTRACT_ADDRESS,
     abi: BETTING_ABI,
   },
-  taoToken: {
-    address: TAO_CONTRACT_ADDRESS,
-    abi: TAO_ABI,
-  },
 } as const
 
 export default contracts
+
+// Note: TAO is native on Bittensor - no token contract address needed
 

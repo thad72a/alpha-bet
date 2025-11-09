@@ -3,9 +3,21 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract BettingCard is ReentrancyGuard, Ownable {
+    // Custom Errors
+    error InvalidTimestamp();
+    error InvalidPrice();
+    error InvalidNetuid();
+    error CardNotFound();
+    error CardAlreadyResolved();
+    error CardNotResolved();
+    error BettingPeriodEnded();
+    error NoSharesToPurchase();
+    error NoSharesToRedeem();
+    error ResolutionTimeNotReached();
+    error TransferFailed();
+    error IncorrectPaymentAmount();
     struct Card {
         uint256 id;
         uint256 netuid;
@@ -25,7 +37,6 @@ contract BettingCard is ReentrancyGuard, Ownable {
         uint256 noShares;
     }
 
-    IERC20 public immutable taoToken;
     uint256 public nextCardId = 1;
     uint256 public platformFee = 250; // 2.5% (250/10000)
     uint256 public constant FEE_DENOMINATOR = 10000;
@@ -64,8 +75,8 @@ contract BettingCard is ReentrancyGuard, Ownable {
         uint256 totalPayout
     );
 
-    constructor(address _taoToken) {
-        taoToken = IERC20(_taoToken);
+    constructor() {
+        // Native TAO - no token address needed
     }
 
     function createCard(
@@ -73,9 +84,9 @@ contract BettingCard is ReentrancyGuard, Ownable {
         uint256 _bettedAlphaPrice,
         uint256 _timestamp
     ) external returns (uint256) {
-        require(_timestamp > block.timestamp, "Timestamp must be in the future");
-        require(_bettedAlphaPrice > 0, "Price must be greater than 0");
-        require(_netuid > 0, "Invalid netuid");
+        if (_timestamp <= block.timestamp) revert InvalidTimestamp();
+        if (_bettedAlphaPrice == 0) revert InvalidPrice();
+        if (_netuid == 0) revert InvalidNetuid();
 
         uint256 cardId = nextCardId++;
         
@@ -104,18 +115,14 @@ contract BettingCard is ReentrancyGuard, Ownable {
         uint256 _cardId,
         uint256 _yesShares,
         uint256 _noShares
-    ) external nonReentrant {
-        require(cardExists[_cardId], "Card does not exist");
-        require(!cards[_cardId].resolved, "Card already resolved");
-        require(_yesShares > 0 || _noShares > 0, "Must purchase at least one share");
-        require(block.timestamp < cards[_cardId].timestamp, "Betting period has ended");
+    ) external payable nonReentrant {
+        if (!cardExists[_cardId]) revert CardNotFound();
+        if (cards[_cardId].resolved) revert CardAlreadyResolved();
+        if (_yesShares == 0 && _noShares == 0) revert NoSharesToPurchase();
+        if (block.timestamp >= cards[_cardId].timestamp) revert BettingPeriodEnded();
 
         uint256 totalCost = _yesShares + _noShares;
-        require(taoToken.balanceOf(msg.sender) >= totalCost, "Insufficient TAO balance");
-        require(taoToken.allowance(msg.sender, address(this)) >= totalCost, "Insufficient allowance");
-
-        // Transfer TAO from user to contract
-        taoToken.transferFrom(msg.sender, address(this), totalCost);
+        if (msg.value != totalCost) revert IncorrectPaymentAmount();
 
         // Update user shares
         userShares[msg.sender][_cardId].yesShares += _yesShares;
@@ -130,9 +137,9 @@ contract BettingCard is ReentrancyGuard, Ownable {
     }
 
     function resolveCard(uint256 _cardId, uint256 _actualAlphaPrice) external onlyOwner {
-        require(cardExists[_cardId], "Card does not exist");
-        require(!cards[_cardId].resolved, "Card already resolved");
-        require(block.timestamp >= cards[_cardId].timestamp, "Resolution time not reached");
+        if (!cardExists[_cardId]) revert CardNotFound();
+        if (cards[_cardId].resolved) revert CardAlreadyResolved();
+        if (block.timestamp < cards[_cardId].timestamp) revert ResolutionTimeNotReached();
 
         Card storage card = cards[_cardId];
         card.resolved = true;
@@ -142,11 +149,11 @@ contract BettingCard is ReentrancyGuard, Ownable {
     }
 
     function redeemShares(uint256 _cardId) external nonReentrant {
-        require(cardExists[_cardId], "Card does not exist");
-        require(cards[_cardId].resolved, "Card not resolved");
+        if (!cardExists[_cardId]) revert CardNotFound();
+        if (!cards[_cardId].resolved) revert CardNotResolved();
 
         Share storage userShare = userShares[msg.sender][_cardId];
-        require(userShare.yesShares > 0 || userShare.noShares > 0, "No shares to redeem");
+        if (userShare.yesShares == 0 && userShare.noShares == 0) revert NoSharesToRedeem();
 
         Card storage card = cards[_cardId];
         uint256 totalPayout = 0;
@@ -163,18 +170,24 @@ contract BettingCard is ReentrancyGuard, Ownable {
             }
         }
 
+        // Store values for event before clearing
+        uint256 yesShares = userShare.yesShares;
+        uint256 noShares = userShare.noShares;
+
         // Clear user shares
         userShares[msg.sender][_cardId] = Share(0, 0);
 
+        // Send native TAO to user
         if (totalPayout > 0) {
-            taoToken.transfer(msg.sender, totalPayout);
+            (bool success, ) = payable(msg.sender).call{value: totalPayout}("");
+            if (!success) revert TransferFailed();
         }
 
-        emit SharesRedeemed(_cardId, msg.sender, userShare.yesShares, userShare.noShares, totalPayout);
+        emit SharesRedeemed(_cardId, msg.sender, yesShares, noShares, totalPayout);
     }
 
     function getCard(uint256 _cardId) external view returns (Card memory) {
-        require(cardExists[_cardId], "Card does not exist");
+        if (!cardExists[_cardId]) revert CardNotFound();
         return cards[_cardId];
     }
 
@@ -188,15 +201,19 @@ contract BettingCard is ReentrancyGuard, Ownable {
     }
 
     function withdrawFees() external onlyOwner {
-        uint256 balance = taoToken.balanceOf(address(this));
+        uint256 balance = address(this).balance;
         if (balance > 0) {
-            taoToken.transfer(owner(), balance);
+            (bool success, ) = payable(owner()).call{value: balance}("");
+            if (!success) revert TransferFailed();
         }
     }
 
     function getCardCount() external view returns (uint256) {
         return nextCardId - 1;
     }
+
+    // Allow contract to receive native TAO
+    receive() external payable {}
 }
 
 

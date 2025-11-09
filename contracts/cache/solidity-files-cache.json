@@ -2,14 +2,14 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/unicorn/alpha-bet/contracts/contracts/BettingCard.sol": {
-      "lastModificationDate": 1760946823259,
-      "contentHash": "879fc70c31d9d7fbb1e3f2cfd90ec049",
+      "lastModificationDate": 1761145047429,
+      "contentHash": "28ef2aac8d4133814a6897930e264444",
       "sourceName": "contracts/BettingCard.sol",
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
           "optimizer": {
-            "enabled": false,
+            "enabled": true,
             "runs": 200
           },
           "outputSelection": {
@@ -30,8 +30,7 @@
       },
       "imports": [
         "@openzeppelin/contracts/security/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+        "@openzeppelin/contracts/access/Ownable.sol"
       ],
       "versionPragmas": [
         "^0.8.19"
@@ -48,7 +47,7 @@
         "version": "0.8.19",
         "settings": {
           "optimizer": {
-            "enabled": false,
+            "enabled": true,
             "runs": 200
           },
           "outputSelection": {
@@ -83,7 +82,7 @@
         "version": "0.8.19",
         "settings": {
           "optimizer": {
-            "enabled": false,
+            "enabled": true,
             "runs": 200
           },
           "outputSelection": {
@@ -155,7 +154,7 @@
         "version": "0.8.19",
         "settings": {
           "optimizer": {
-            "enabled": false,
+            "enabled": true,
             "runs": 200
           },
           "outputSelection": {
@@ -256,44 +255,6 @@
       ],
       "artifacts": [
         "ERC20"
-      ]
-    },
-    "/home/unicorn/alpha-bet/contracts/contracts/MockTAO.sol": {
-      "lastModificationDate": 1759924726232,
-      "contentHash": "027a24b02cce152411fe066693064be3",
-      "sourceName": "contracts/MockTAO.sol",
-      "solcConfig": {
-        "version": "0.8.19",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
-        "@openzeppelin/contracts/access/Ownable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "MockTAO"
       ]
     }
   }
