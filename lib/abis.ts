@@ -8,6 +8,21 @@ export const BETTING_ABI = [
   },
   {
     "inputs": [],
+    "name": "InvalidCardType",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidOption",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidOptionsArray",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "BettingPeriodEnded",
     "type": "error"
   },
@@ -101,6 +116,43 @@ export const BETTING_ABI = [
       }
     ],
     "name": "CardCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "cardId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "netuid",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string[]",
+        "name": "optionNames",
+        "type": "string[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      }
+    ],
+    "name": "CardCreatedMulti",
     "type": "event"
   },
   {
@@ -222,6 +274,105 @@ export const BETTING_ABI = [
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "cardId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "optionIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "feeAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "netAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "OptionBetPlaced",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "cardId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "winningOption",
+        "type": "uint256"
+      }
+    ],
+    "name": "CardResolvedMulti",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "cardId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "winningOption",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "userGrossStakeOnWinner",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "payout",
+        "type": "uint256"
+      }
+    ],
+    "name": "OptionWinningsRedeemed",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "FEE_DENOMINATOR",
     "outputs": [
@@ -317,6 +468,21 @@ export const BETTING_ABI = [
         "internalType": "uint256",
         "name": "creationTime",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "cardType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string[]",
+        "name": "optionNames",
+        "type": "string[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "winningOption",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -341,6 +507,35 @@ export const BETTING_ABI = [
       }
     ],
     "name": "createCard",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_netuid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string[]",
+        "name": "_optionNames",
+        "type": "string[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "createCardMulti",
     "outputs": [
       {
         "internalType": "uint256",
@@ -417,6 +612,21 @@ export const BETTING_ABI = [
             "internalType": "uint256",
             "name": "creationTime",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "cardType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "string[]",
+            "name": "optionNames",
+            "type": "string[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "winningOption",
+            "type": "uint256"
           }
         ],
         "internalType": "struct BettingCard.Card",
@@ -430,6 +640,78 @@ export const BETTING_ABI = [
   {
     "inputs": [],
     "name": "getCardCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOptionNames",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_optionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "getUserOptionStake",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_optionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOptionTotalStake",
     "outputs": [
       {
         "internalType": "uint256",
@@ -544,9 +826,40 @@ export const BETTING_ABI = [
         "internalType": "uint256",
         "name": "_cardId",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_optionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "placeBetOnOption",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
       }
     ],
     "name": "redeemShares",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      }
+    ],
+    "name": "redeemOptionWinnings",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -572,6 +885,24 @@ export const BETTING_ABI = [
       }
     ],
     "name": "resolveCard",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_winningOption",
+        "type": "uint256"
+      }
+    ],
+    "name": "resolveCardMulti",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
