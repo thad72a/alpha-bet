@@ -1,0 +1,8 @@
+fastapi==0.110.1
+uvicorn[standard]==0.29.0
+pydantic==2.6.1
+httpx==0.27.0
+cachetools==5.3.3
+# Bittensor Python package for on-chain subnet data
+bittensor==9.12.2
+

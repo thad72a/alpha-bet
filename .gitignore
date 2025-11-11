@@ -2,3 +2,5 @@ node_modules
 package-lock.json
 .next
 .env.local
+venv/
+__pycache__/
