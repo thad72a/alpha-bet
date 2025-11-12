@@ -2,192 +2,372 @@
 
 ## Project Summary
 
-This project includes Solidity smart contracts for a betting/prediction market on Bittensor subnet Alpha prices. The setup uses:
-- **Hardhat** for compilation and deployment
-- **OpenZeppelin** v4.9.6 for secure contract standards
+Alpha Bet uses Solidity smart contracts deployed on **Bittensor EVM** for a prediction market on Bittensor subnet Alpha prices. The contracts use **native TAO** tokens (no wrapping required).
+
+**Technology Stack:**
+- **Hardhat** for compilation, testing, and deployment
+- **OpenZeppelin** v4.9.3 for secure contract standards
 - **Ethers.js** v6 for blockchain interaction
 - **Chai** for testing
+- **Bittensor EVM** for deployment (Testnet Chain ID: 945, Mainnet Chain ID: 966)
 
-## ✅ Completed Setup
+## ✅ Current Status
 
-### 1. Fixed Environment Issues
-- Resolved corrupted `/home/unicorn/utils/package.json` that was blocking compilation
-- Moved `BettingCard.sol` to correct location (`contracts/contracts/`)
+### Smart Contracts
 
-### 2. Updated Tests for Ethers v6
-All tests have been migrated from Ethers v5 to v6 syntax:
-- `contract.deployed()` → `await contract.waitForDeployment()`
-- `contract.address` → `await contract.getAddress()`
-- `ethers.utils.parseEther()` → `ethers.parseEther()`
-- `bigNumber.add()` → `bigNumber + otherBigNumber`
-- Fixed timestamp handling to use blockchain time instead of system time
-
-### 3. Test Results
-✅ **All 6 tests passing:**
-- Card Creation (2 tests)
-- Share Purchasing (2 tests)
-- Card Resolution (2 tests)
-
-### 4. Deployed Contracts
-
-**Local Hardhat Network (localhost:8545)**
-- **MockTAO Token:** `0x5FbDB2315678afecb367f032d93F642f64180aa3`
-- **BettingCard Contract:** `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512`
-- **Chain ID:** 1337
-
-## Smart Contracts Overview
-
-### BettingCard.sol
+#### BettingCard.sol
 Main prediction market contract featuring:
-- Create betting cards for Alpha price predictions
-- Purchase YES/NO shares using TAO tokens
+- **Native TAO payments** using Solidity `payable` functions
+- Create betting cards for Alpha price predictions (Binary YES/NO or Multi-option)
+- Purchase shares using native TAO
 - Resolve cards based on actual outcomes
-- Redeem winnings
-- Platform fee management
+- Redeem winnings in native TAO
+- Platform fee management (2.5% default)
 - Security: ReentrancyGuard, Ownable
 
-### MockTAO.sol
-ERC20 test token simulating TAO:
-- Faucet function for easy testing
-- Minting capabilities for testing scenarios
+**Key Functions:**
+- `createCard()` - Create binary YES/NO market
+- `createCardMulti()` - Create multi-option market
+- `purchaseShares()` - Buy YES/NO shares with native TAO
+- `placeBetOnOption()` - Bet on specific option in multi-market
+- `resolveCard()` - Resolve binary market (owner only)
+- `resolveCardMulti()` - Resolve multi-option market (owner only)
+- `redeemShares()` - Claim winnings from binary market
+- `redeemOptionWinnings()` - Claim winnings from multi-option market
 
-## Usage Instructions
+### Network Configuration
 
-### Running Tests
+The project is configured for three networks:
+
+1. **Bittensor Testnet** (Primary)
+   - Chain ID: 945
+   - RPC: https://test.chain.opentensor.ai
+   - Currency: tTAO (Test TAO)
+   - Explorer: https://evm.taostats.io
+
+2. **Bittensor Mainnet**
+   - Chain ID: 966
+   - RPC: https://lite.chain.opentensor.ai
+   - Currency: TAO
+   - Explorer: https://evm.taostats.io
+
+3. **Localhost** (Development)
+   - Chain ID: 1337
+   - RPC: http://127.0.0.1:8545
+   - For local Hardhat testing
+
+## Installation & Setup
+
+### 1. Install Dependencies
+
 ```bash
 cd /home/unicorn/alpha-bet/contracts
-npx hardhat test
+npm install
 ```
 
-### Starting Local Node
-```bash
-cd /home/unicorn/alpha-bet/contracts
-npx hardhat node
-```
-*Note: Node is currently running in the background*
+### 2. Set Up Environment Variables
 
-### Deploying Contracts
+Create or update `.env.local` in the project root:
+
+```env
+# Deployment Private Key (KEEP SECRET!)
+PRIVATE_KEY=your_private_key_here
+
+# Network Configuration
+NEXT_PUBLIC_NETWORK=bittensorTestnet
+NEXT_PUBLIC_CHAIN_ID=945
+NEXT_PUBLIC_RPC_URL=https://test.chain.opentensor.ai
+
+# Contract Addresses (filled in after deployment)
+NEXT_PUBLIC_BETTING_CONTRACT_ADDRESS=0x...
+
+# WalletConnect Project ID
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id_here
+```
+
+### 3. Compile Contracts
+
 ```bash
-cd /home/unicorn/alpha-bet/contracts
+cd contracts
+npm run compile
+```
+
+This generates artifacts in `contracts/artifacts/` directory.
+
+## Deployment
+
+### Deploy to Bittensor Testnet
+
+1. **Get Test TAO**
+   - Visit [Bittensor Testnet Faucet](https://faucet.bittensor.com/)
+   - Request testnet TAO for your address
+   - Wait for confirmation
+
+2. **Add Private Key to `.env.local`**
+   ```env
+   PRIVATE_KEY=0x1234567890abcdef... # Your private key
+   ```
+
+3. **Deploy**
+   ```bash
+   cd contracts
+   npm run deploy:testnet
+   ```
+
+4. **Verify Deployment**
+   - Check the console output for contract address
+   - Visit https://evm.taostats.io/address/YOUR_CONTRACT_ADDRESS
+   - The script automatically updates `.env.local` with the deployed address
+
+5. **Restart Frontend**
+   ```bash
+   npm run dev
+   ```
+
+### Deploy to Bittensor Mainnet
+
+⚠️ **WARNING**: Mainnet deployment uses real TAO!
+
+```bash
+cd contracts
+npm run deploy:mainnet
+```
+
+Make sure:
+- You have real TAO for gas fees
+- Your private key is secure
+- You've tested thoroughly on testnet first
+
+### Local Development Deployment
+
+For local testing with Hardhat:
+
+```bash
+# Terminal 1: Start Hardhat node
+cd contracts
+npm run node
+
+# Terminal 2: Deploy
 npm run deploy:localhost
 ```
 
-### Recompiling Contracts
+## Testing
+
+### Run All Tests
+
 ```bash
-cd /home/unicorn/alpha-bet/contracts
-npx hardhat compile
+cd contracts
+npm run test
+```
+
+### Test Structure
+
+The test suite (`test/BettingCard.test.js`) covers:
+
+1. **Card Creation**
+   - Creating binary (YES/NO) markets
+   - Creating multi-option markets
+   - Validation checks
+
+2. **Share Purchasing**
+   - Buying shares with native TAO
+   - Platform fee calculation
+   - Liquidity tracking
+
+3. **Card Resolution**
+   - Resolving binary markets
+   - Resolving multi-option markets
+   - Owner-only restrictions
+
+4. **Redemption**
+   - Claiming winnings
+   - Payout calculations
+   - Preventing double-claims
+
+### Test Coverage
+
+All tests use native TAO (via `{ value: amount }` in transactions).
+
+## Contract Addresses
+
+Current deployments are tracked in `contracts/deployment-addresses.json`.
+
+**Format:**
+```json
+{
+  "bittensorTestnet": {
+    "network": "bittensorTestnet",
+    "chainId": 945,
+    "contracts": {
+      "BettingCard": "0x...",
+      "TAO": "native"
+    },
+    "deployedAt": "2025-11-11T..."
+  }
+}
+```
+
+## Usage Examples
+
+### Creating a Binary Market
+
+```javascript
+const netuid = 1; // Subnet ID
+const targetPrice = ethers.parseEther("0.025"); // 0.025 TAO
+const deadline = Math.floor(Date.now() / 1000) + 86400; // 24 hours from now
+
+const tx = await bettingCard.createCard(netuid, targetPrice, deadline);
+await tx.wait();
+```
+
+### Purchasing Shares
+
+```javascript
+const cardId = 1;
+const yesShares = ethers.parseEther("10"); // 10 TAO worth of YES
+const noShares = ethers.parseEther("5");   // 5 TAO worth of NO
+const totalCost = yesShares + noShares;    // 15 TAO total
+
+const tx = await bettingCard.purchaseShares(
+  cardId, 
+  yesShares, 
+  noShares,
+  { value: totalCost } // Send native TAO
+);
+await tx.wait();
+```
+
+### Creating a Multi-Option Market
+
+```javascript
+const netuid = 1;
+const options = ["Option A", "Option B", "Option C"];
+const deadline = Math.floor(Date.now() / 1000) + 86400;
+
+const tx = await bettingCard.createCardMulti(netuid, options, deadline);
+await tx.wait();
+```
+
+### Placing a Bet on Option
+
+```javascript
+const cardId = 1;
+const optionIndex = 0; // Bet on Option A
+const betAmount = ethers.parseEther("10"); // 10 TAO
+
+const tx = await bettingCard.placeBetOnOption(
+  cardId,
+  optionIndex,
+  { value: betAmount }
+);
+await tx.wait();
 ```
 
 ## Frontend Integration
 
-### Environment Variables
-Create a `.env.local` file in the project root with:
+### Using the Contract in React/Next.js
 
-```env
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id_here
-NEXT_PUBLIC_BETTING_CONTRACT_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-NEXT_PUBLIC_TAO_CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
-NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545
+The frontend uses Wagmi v1 for contract interaction. Example:
+
+```typescript
+import { useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { parseEther } from 'viem';
+import { BETTING_ABI } from '@/lib/abis';
+import { BETTING_CONTRACT_ADDRESS } from '@/lib/contracts';
+
+// Prepare the transaction
+const { config } = usePrepareContractWrite({
+  address: BETTING_CONTRACT_ADDRESS,
+  abi: BETTING_ABI,
+  functionName: 'purchaseShares',
+  args: [cardId, yesShares, noShares],
+  value: totalCost, // Native TAO amount
+});
+
+// Execute the transaction
+const { write } = useContractWrite(config);
 ```
 
-### Test Accounts
-Hardhat provides 20 pre-funded accounts. Use these for testing:
-- Account #0: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` (10,000 ETH)
-- Account #1: `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` (10,000 ETH)
-- ... (see Hardhat node output for full list)
+## Address Format Support
 
-### Getting Test TAO Tokens
-Use the MockTAO faucet function:
-```javascript
-// In your frontend or Hardhat console
-const mockTAO = await ethers.getContractAt("MockTAO", "0x5FbDB2315678afecb367f032d93F642f64180aa3");
-await mockTAO.faucet(); // Mints 1000 TAO to caller
-```
+Bittensor supports two address formats:
 
-## Project Structure
+### SS58 (Substrate/Polkadot)
+- Format: `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`
+- Used for native Bittensor chain operations
+- Requires Polkadot.js wallet
 
-```
-/home/unicorn/alpha-bet/
-├── contracts/
-│   ├── contracts/
-│   │   ├── BettingCard.sol       # Main betting contract
-│   │   └── MockTAO.sol           # Test ERC20 token
-│   ├── test/
-│   │   └── BettingCard.test.js   # Comprehensive test suite
-│   ├── scripts/
-│   │   └── deploy.js             # Deployment script
-│   ├── hardhat.config.js         # Hardhat configuration
-│   ├── package.json              # Contract dependencies
-│   └── deployment-addresses.json # Latest deployment info
-├── app/                          # Next.js frontend
-├── components/                   # React components
-└── package.json                  # Frontend dependencies
-```
+### H160 (EVM/Ethereum)
+- Format: `0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb`
+- Used for smart contract interactions
+- Requires MetaMask or EVM-compatible wallet
 
-## Next Steps
+**For this dApp**: Users must have an **H160 address** to interact with the BettingCard contract.
 
-1. **Start Frontend Development Server:**
-   ```bash
-   cd /home/unicorn/alpha-bet
-   npm run dev
-   ```
+See `lib/bittensor-wallet.ts` for utility functions to detect and validate address formats.
 
-2. **Connect MetaMask to Local Network:**
-   - Network Name: Localhost
-   - RPC URL: http://127.0.0.1:8545
-   - Chain ID: 1337
-   - Currency Symbol: ETH
+## Gas Fees
 
-3. **Import Test Account:**
-   - Use one of Hardhat's private keys for testing
-   - Get TAO tokens using the faucet function
+All transactions on Bittensor EVM require gas fees paid in TAO:
 
-4. **Test the Full Flow:**
-   - Connect wallet to dApp
-   - Get test TAO tokens
-   - Create a betting card
-   - Purchase shares
-   - Test resolution (as contract owner)
-   - Redeem winnings
+- **createCard**: ~100,000 gas
+- **createCardMulti**: ~150,000+ gas (depends on option count)
+- **purchaseShares**: ~80,000 gas
+- **placeBetOnOption**: ~70,000 gas
+- **resolveCard**: ~50,000 gas
+- **redeemShares**: ~40,000 gas
+
+Actual gas costs vary based on network congestion and transaction complexity.
+
+## Security Considerations
+
+1. **Private Key Security**
+   - Never commit `.env.local` to git
+   - Use hardware wallets for mainnet deployments
+   - Rotate keys regularly
+
+2. **Smart Contract Security**
+   - ReentrancyGuard prevents reentrancy attacks
+   - Ownable restricts resolution to contract owner
+   - Platform fees capped at 10% maximum
+   - No token approval needed (native TAO)
+
+3. **Testing**
+   - Always test on testnet first
+   - Verify all transactions on explorer
+   - Test with small amounts initially
 
 ## Troubleshooting
 
+### "Insufficient funds" Error
+- Ensure you have enough TAO for both the transaction amount and gas fees
+- Check your balance: `await provider.getBalance(yourAddress)`
+
+### "Transaction reverted" Error
+- Check that the betting period hasn't ended
+- Verify you're sending the correct amount with `{ value: amount }`
+- Ensure the card hasn't been resolved yet
+
 ### Contract Not Found
-If you get "Artifact not found" errors:
-```bash
-cd /home/unicorn/alpha-bet/contracts
-rm -rf artifacts cache
-npx hardhat compile
-```
+- Verify the contract address in `.env.local`
+- Check that you're on the correct network (testnet vs mainnet)
+- Recompile contracts: `npm run compile`
 
-### Node Connection Issues
-Restart the Hardhat node:
-```bash
-# Stop current node (Ctrl+C if in foreground)
-npx hardhat node
-```
-
-### Test Failures
-Ensure you're using blockchain time, not system time for timestamps.
-
-## Available npm Scripts
-
-In `/home/unicorn/alpha-bet/contracts/`:
-- `npm run compile` - Compile contracts
-- `npm run test` - Run test suite
-- `npm run node` - Start local Hardhat node
-- `npm run deploy` - Deploy to configured network
-- `npm run deploy:localhost` - Deploy to local node
+### Tests Failing
+- Clear cache: `rm -rf artifacts cache`
+- Recompile: `npm run compile`
+- Check that you're using the correct Ethers.js v6 syntax
 
 ## Resources
 
 - [Hardhat Documentation](https://hardhat.org/docs)
+- [Bittensor Documentation](https://docs.bittensor.com/)
+- [Bittensor EVM Explorer](https://evm.taostats.io)
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/)
 - [Ethers.js v6 Documentation](https://docs.ethers.org/v6/)
-- [Next.js Documentation](https://nextjs.org/docs)
+- [Wagmi Documentation](https://wagmi.sh/)
 
 ---
 
-**Status:** ✅ Fully operational and ready for testing
-**Last Updated:** October 20, 2025
-
+**Status:** ✅ Fully operational with native TAO on Bittensor EVM
+**Last Updated:** November 11, 2025

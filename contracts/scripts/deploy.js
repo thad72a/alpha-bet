@@ -1,35 +1,52 @@
 const hre = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
-  // Deploy a mock TAO token for testing
-  const MockTAO = await hre.ethers.getContractFactory("MockTAO");
-  const mockTAO = await MockTAO.deploy();
-  await mockTAO.waitForDeployment();
+  console.log("🚀 Starting deployment...\n");
   
-  const mockTAOAddress = await mockTAO.getAddress();
-  console.log("MockTAO deployed to:", mockTAOAddress);
+  // Get network info
+  const network = hre.network.name;
+  console.log("📡 Network:", network);
 
-  // Deploy the BettingCard contract
+  // Deploy the BettingCard contract (uses native TAO)
+  console.log("📝 Deploying BettingCard contract...");
   const BettingCard = await hre.ethers.getContractFactory("BettingCard");
-  const bettingCard = await BettingCard.deploy(mockTAOAddress);
+  const bettingCard = await BettingCard.deploy();
   await bettingCard.waitForDeployment();
 
   const bettingCardAddress = await bettingCard.getAddress();
-  console.log("BettingCard deployed to:", bettingCardAddress);
-  console.log("MockTAO address:", mockTAOAddress);
+  console.log("✅ BettingCard deployed to:", bettingCardAddress);
+
+  // Save deployment info
+  const deploymentInfo = {
+    network: network,
+    contracts: {
+      BettingCard: bettingCardAddress,
+      TAO: 'native' // Native TAO, not a contract
+    },
+    deployedAt: new Date().toISOString(),
+    note: "TAO is native on Bittensor - no token contract address needed"
+  };
+
+  const deploymentsPath = path.join(__dirname, '../deployment-addresses.json');
+  fs.writeFileSync(deploymentsPath, JSON.stringify(deploymentInfo, null, 2));
+  console.log("💾 Deployment info saved to deployment-addresses.json");
   
-  // Log the deployment info
-  console.log("\n=== Deployment Summary ===");
-  console.log("Network:", hre.network.name);
-  console.log("MockTAO Token:", mockTAOAddress);
+  // Log the deployment summary
+  console.log("\n" + "=".repeat(50));
+  console.log("🎉 DEPLOYMENT SUCCESSFUL!");
+  console.log("=".repeat(50));
+  console.log("Network:", network);
   console.log("BettingCard Contract:", bettingCardAddress);
-  console.log("\nUpdate your frontend with these addresses!");
+  console.log("TAO: Native (no contract address needed)");
+  console.log("=".repeat(50) + "\n");
 }
 
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error(error);
+    console.error("❌ Deployment failed:", error);
     process.exit(1);
   });
 

@@ -13,7 +13,17 @@ async function main() {
   console.log("🔗 Chain ID:", chainId);
   
   // Get deployer account
-  const [deployer] = await hre.ethers.getSigners();
+  const signers = await hre.ethers.getSigners();
+  
+  if (signers.length === 0) {
+    console.error("❌ Error: No signers available!");
+    console.error("\n📝 Please ensure you have set PRIVATE_KEY in .env.local");
+    console.error("Example: PRIVATE_KEY=0x1234567890abcdef...\n");
+    console.error("Location: /home/unicorn/alpha-bet/.env.local");
+    process.exit(1);
+  }
+  
+  const deployer = signers[0];
   console.log("👤 Deploying with account:", deployer.address);
   
   // Check balance
@@ -29,7 +39,19 @@ async function main() {
   // Deploy the BettingCard contract (no token address needed for native TAO)
   console.log("📝 Deploying BettingCard contract...");
   const BettingCard = await hre.ethers.getContractFactory("BettingCard");
-  const bettingCard = await BettingCard.deploy();
+  
+  // Manual gas settings to bypass Bittensor testnet gas estimation bug
+  const gasLimit = 10000000; // 10M gas
+  const gasPrice = hre.ethers.parseUnits("30", "gwei"); // 30 gwei (base fee is ~20 gwei)
+  
+  console.log("⛽ Using manual gas settings (testnet workaround):");
+  console.log("   Gas Limit:", gasLimit);
+  console.log("   Gas Price:", hre.ethers.formatUnits(gasPrice, "gwei"), "gwei");
+  
+  const bettingCard = await BettingCard.deploy({
+    gasLimit: gasLimit,
+    gasPrice: gasPrice
+  });
   
   console.log("⏳ Waiting for deployment transaction...");
   await bettingCard.waitForDeployment();

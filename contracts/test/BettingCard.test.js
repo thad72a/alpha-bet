@@ -3,7 +3,6 @@ const { ethers } = require("hardhat");
 
 describe("BettingCard", function () {
   let bettingCard;
-  let mockTAO;
   let owner;
   let user1;
   let user2;
@@ -11,19 +10,10 @@ describe("BettingCard", function () {
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
 
-    // Deploy MockTAO
-    const MockTAO = await ethers.getContractFactory("MockTAO");
-    mockTAO = await MockTAO.deploy();
-    await mockTAO.waitForDeployment();
-
-    // Deploy BettingCard
+    // Deploy BettingCard (uses native TAO)
     const BettingCard = await ethers.getContractFactory("BettingCard");
-    bettingCard = await BettingCard.deploy(await mockTAO.getAddress());
+    bettingCard = await BettingCard.deploy();
     await bettingCard.waitForDeployment();
-
-    // Give users some TAO tokens
-    await mockTAO.connect(user1).faucet();
-    await mockTAO.connect(user2).faucet();
   });
 
   describe("Card Creation", function () {
@@ -51,7 +41,7 @@ describe("BettingCard", function () {
 
       await expect(
         bettingCard.connect(user1).createCard(netuid, bettedPrice, timestamp)
-      ).to.be.revertedWith("Timestamp must be in the future");
+      ).to.be.revertedWithCustomError(bettingCard, "InvalidTimestamp");
     });
   });
 
@@ -66,35 +56,40 @@ describe("BettingCard", function () {
 
       await bettingCard.connect(user1).createCard(netuid, bettedPrice, timestamp);
       cardId = 1;
-
-      // Approve spending
-      await mockTAO.connect(user2).approve(await bettingCard.getAddress(), ethers.parseEther("100"));
     });
 
-    it("Should allow users to purchase shares", async function () {
+    it("Should allow users to purchase shares with native TAO", async function () {
       const yesShares = ethers.parseEther("10");
       const noShares = ethers.parseEther("5");
+      const totalCost = yesShares + noShares;
 
       await expect(
-        bettingCard.connect(user2).purchaseShares(cardId, yesShares, noShares)
+        bettingCard.connect(user2).purchaseShares(cardId, yesShares, noShares, { value: totalCost })
       ).to.emit(bettingCard, "SharesPurchased")
-        .withArgs(cardId, user2.address, yesShares, noShares, yesShares + noShares);
+        .withArgs(cardId, user2.address, yesShares, noShares, totalCost);
 
       const userShares = await bettingCard.getUserShares(user2.address, cardId);
       expect(userShares.yesShares).to.equal(yesShares);
       expect(userShares.noShares).to.equal(noShares);
     });
 
-    it("Should update card totals correctly", async function () {
+    it("Should update card totals correctly with platform fee", async function () {
       const yesShares = ethers.parseEther("10");
       const noShares = ethers.parseEther("5");
+      const totalCost = yesShares + noShares;
 
-      await bettingCard.connect(user2).purchaseShares(cardId, yesShares, noShares);
+      await bettingCard.connect(user2).purchaseShares(cardId, yesShares, noShares, { value: totalCost });
 
       const card = await bettingCard.getCard(cardId);
       expect(card.totalYesShares).to.equal(yesShares);
       expect(card.totalNoShares).to.equal(noShares);
-      expect(card.totalLiquidity).to.equal(yesShares + noShares);
+      
+      // Total liquidity should be totalCost minus platform fee (2.5%)
+      const platformFee = await bettingCard.platformFee();
+      const FEE_DENOMINATOR = await bettingCard.FEE_DENOMINATOR();
+      const expectedFee = (totalCost * platformFee) / FEE_DENOMINATOR;
+      const expectedLiquidity = totalCost - expectedFee;
+      expect(card.totalLiquidity).to.equal(expectedLiquidity);
     });
   });
 
@@ -129,6 +124,10 @@ describe("BettingCard", function () {
 
     it("Should only allow owner to resolve cards", async function () {
       const actualPrice = ethers.parseEther("0.030");
+
+      // Fast forward time to after the resolution timestamp
+      await ethers.provider.send("evm_increaseTime", [86400 + 1]);
+      await ethers.provider.send("evm_mine");
 
       await expect(
         bettingCard.connect(user1).resolveCard(cardId, actualPrice)

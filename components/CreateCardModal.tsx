@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SubnetData } from '@/types/subnet'
+import { useSubnetSummaries } from '@/components/SubnetProvider'
 import { formatTimestamp } from '@/lib/bittensor'
 import { showErrorToast, showSuccessToast, showLoadingToast, dismissToast } from '@/lib/errorHandling'
 import { 
@@ -35,6 +36,7 @@ export function CreateCardModal({ subnets, onClose, onCardCreated }: CreateCardM
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadingToastId, setLoadingToastId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { summaries } = useSubnetSummaries()
 
   // Cleanup on unmount
   useEffect(() => {
@@ -44,6 +46,31 @@ export function CreateCardModal({ subnets, onClose, onCardCreated }: CreateCardM
       }
     }
   }, [loadingToastId])
+
+  // On mount or summaries change, refresh subnet list for realtime options
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const list: SubnetData[] = Object.values(summaries).map((s) => ({
+          netuid: s.netuid,
+          name: s.subnet_name || `Subnet ${s.netuid}`,
+          alphaPrice: typeof s.price === 'number' ? s.price : 0,
+          validatorCount: typeof s.n === 'number' ? s.n : 0,
+          minerCount: 0,
+          totalStake: 0,
+          emissionRate: typeof s.tao_in_emission === 'number' ? s.tao_in_emission : 0,
+          lastUpdate: Date.now(),
+        }))
+        // If no selected subnet yet, preselect first option
+        if (!selectedSubnet && list.length > 0) {
+          setSelectedSubnet(list[0])
+        }
+      } catch {
+        // Ignore; will use subnets prop
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [summaries])
 
   // Validate inputs before preparing transaction
   const isValidPrice = bettedPrice && !isNaN(parseFloat(bettedPrice)) && parseFloat(bettedPrice) > 0

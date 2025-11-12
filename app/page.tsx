@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useAccount, useContractRead } from 'wagmi'
+import { useState, useEffect, useMemo } from 'react'
+import { useAccount } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { SubnetData, BettingCardData } from '@/types/subnet'
+import { SubnetData } from '@/types/subnet'
 import { BettingCard } from '@/components/BettingCard'
 import { CreateCardModal } from '@/components/CreateCardModal'
 import { 
@@ -25,161 +25,58 @@ import {
 } from 'lucide-react'
 
 // Contract configuration
-import { BETTING_CONTRACT_ADDRESS, BETTING_ABI } from '@/lib/contracts'
+import { useSubnetSummaries } from '@/components/SubnetProvider'
+import { useAllCards } from '@/lib/contract-hooks'
+import { enrichCard, filterCards, sortCards } from '@/lib/card-helpers'
 
 export default function Home() {
   const { address, isConnected } = useAccount()
   const [subnets, setSubnets] = useState<SubnetData[]>([])
-  const [cards, setCards] = useState<any[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [selectedSubnet, setSelectedSubnet] = useState<number | null>(null)
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'resolved'>('active')
+  const [sortBy, setSortBy] = useState<'volume' | 'deadline' | 'newest' | 'oldest'>('volume')
+  
+  // Fetch real data from blockchain and Bittensor network
+  const { summaries, lastUpdated } = useSubnetSummaries()
+  const { cards: blockchainCards, count: cardCount, isLoading: cardsLoading } = useAllCards()
 
-  // Fetch card count
-  const { data: cardCount } = useContractRead({
-    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
-    abi: BETTING_ABI,
-    functionName: 'getCardCount',
-  })
+  // Enrich blockchain cards with subnet data
+  const enrichedCards = useMemo(() => {
+    if (!blockchainCards || blockchainCards.length === 0) return []
+    
+    return blockchainCards.map((card) => {
+      const subnetData = summaries[card.netuid] || null
+      return enrichCard(card, subnetData)
+    })
+  }, [blockchainCards, summaries])
 
-  // Fetch all cards
+  // Apply filters and sorting
+  const displayCards = useMemo(() => {
+    const filtered = filterCards(enrichedCards, filterStatus)
+    return sortCards(filtered, sortBy)
+  }, [enrichedCards, filterStatus, sortBy])
+
+  const loading = cardsLoading
+
+  // Convert subnet summaries to SubnetData format for UI
   useEffect(() => {
-    const fetchCards = async () => {
-      // Mock data for demonstration - unified theme
-      const mockCards = [
-        {
-          id: 1,
-          type: 'price-threshold' as const,
-          netuid: 1,
-          bettedAlphaPrice: 0.025,
-          currentAlphaPrice: 0.0234,
-          priceChange: 2.1,
-          timestamp: Math.floor(Date.now() / 1000) + 3600 * 4,
-          creator: '0x1234567890abcdef1234567890abcdef12345678',
-          totalYesShares: 150,
-          totalNoShares: 100,
-          totalLiquidity: 250,
-          resolved: false,
-          outcome: false,
-          creationTime: Math.floor(Date.now() / 1000) - 3600,
-          volume: 33000,
-          frequency: 'Weekly',
-          question: 'Will ALPHA-1 be above 0.025 TAO by October 13?'
-        },
-        {
-          id: 2,
-          type: 'binary-event' as const,
-          netuid: 2,
-          currentAlphaPrice: 0.0187,
-          priceChange: -1.5,
-          timestamp: Math.floor(Date.now() / 1000) + 3600 * 2,
-          creator: '0xabcdef1234567890abcdef1234567890abcdef12',
-          totalYesShares: 80,
-          totalNoShares: 120,
-          totalLiquidity: 200,
-          resolved: false,
-          outcome: false,
-          creationTime: Math.floor(Date.now() / 1000) - 1800,
-          volume: 26000,
-          frequency: 'Daily',
-          question: 'Will Subnet 2 reach 100 validators by December 31?'
-        },
-        {
-          id: 3,
-          type: 'price-threshold' as const,
-          netuid: 3,
-          bettedAlphaPrice: 0.020,
-          currentAlphaPrice: 0.0156,
-          priceChange: 0.8,
-          timestamp: Math.floor(Date.now() / 1000) + 3600 * 6,
-          creator: '0x9876543210fedcba9876543210fedcba98765432',
-          totalYesShares: 200,
-          totalNoShares: 150,
-          totalLiquidity: 350,
-          resolved: false,
-          outcome: false,
-          creationTime: Math.floor(Date.now() / 1000) - 7200,
-          volume: 93000,
-          frequency: 'Weekly',
-          question: 'Will ALPHA-3 reach 0.020 TAO by October 9?'
-        },
-        {
-          id: 4,
-          type: 'binary-event' as const,
-          netuid: 4,
-          currentAlphaPrice: 0.0123,
-          priceChange: 3.2,
-          timestamp: Math.floor(Date.now() / 1000) + 3600 * 8,
-          creator: '0xfedcba0987654321fedcba0987654321fedcba09',
-          totalYesShares: 120,
-          totalNoShares: 180,
-          totalLiquidity: 300,
-          resolved: false,
-          outcome: false,
-          creationTime: Math.floor(Date.now() / 1000) - 3600,
-          volume: 105000,
-          frequency: 'Monthly',
-          question: 'Will Subnet 4 launch token by December 31?'
-        }
-      ]
-      setCards(mockCards)
+    try {
+      const list: SubnetData[] = Object.values(summaries).map((s) => ({
+        netuid: s.netuid,
+        name: s.subnet_name || `Subnet ${s.netuid}`,
+        alphaPrice: typeof s.price === 'number' ? s.price : 0,
+        validatorCount: typeof s.n === 'number' ? s.n : 0,
+        minerCount: 0,
+        totalStake: 0,
+        emissionRate: typeof s.tao_in_emission === 'number' ? s.tao_in_emission : 0,
+        lastUpdate: lastUpdated ?? Date.now(),
+      }))
+      setSubnets(list)
+    } catch (error) {
+      console.error('Error mapping subnets:', error)
     }
-
-    const fetchSubnets = async () => {
-      try {
-        // Mock subnet data
-        const mockSubnets = [
-          {
-            netuid: 1,
-            name: 'Compute',
-            alphaPrice: 0.0234,
-            validatorCount: 64,
-            minerCount: 1024,
-            totalStake: 1000000,
-            emissionRate: 0.1,
-            lastUpdate: Date.now()
-          },
-          {
-            netuid: 2,
-            name: 'Storage',
-            alphaPrice: 0.0187,
-            validatorCount: 32,
-            minerCount: 512,
-            totalStake: 500000,
-            emissionRate: 0.05,
-            lastUpdate: Date.now()
-          },
-          {
-            netuid: 3,
-            name: 'AI',
-            alphaPrice: 0.0156,
-            validatorCount: 128,
-            minerCount: 2048,
-            totalStake: 2000000,
-            emissionRate: 0.2,
-            lastUpdate: Date.now()
-          },
-          {
-            netuid: 4,
-            name: 'Gaming',
-            alphaPrice: 0.0123,
-            validatorCount: 16,
-            minerCount: 256,
-            totalStake: 250000,
-            emissionRate: 0.03,
-            lastUpdate: Date.now()
-          }
-        ]
-        setSubnets(mockSubnets)
-      } catch (error) {
-        console.error('Error fetching subnets:', error)
-      }
-    }
-
-    fetchCards()
-    fetchSubnets()
-    setLoading(false)
-  }, [cardCount])
+  }, [summaries, lastUpdated])
 
   if (loading) {
     return (
@@ -327,7 +224,7 @@ export default function Home() {
                   <BarChart3 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{cards.length}</p>
+                  <p className="text-2xl font-bold text-white">{displayCards.length}</p>
                   <p className="text-sm text-white/60">Total Cards</p>
                 </div>
               </div>
@@ -353,7 +250,7 @@ export default function Home() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
-              <span className="text-lg font-medium text-white">{cards.length} markets</span>
+              <span className="text-lg font-medium text-white">{displayCards.length} markets</span>
               <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
             </div>
             <div className="flex items-center space-x-4">
@@ -378,7 +275,7 @@ export default function Home() {
             </div>
           </div>
           
-          {cards.length === 0 ? (
+          {displayCards.length === 0 ? (
             <Card className="premium-card">
               <CardContent className="text-center py-16">
                 <div className="w-24 h-24 bg-gradient-to-br from-white/20 to-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -406,7 +303,7 @@ export default function Home() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cards.map((card, index) => (
+              {displayCards.map((card, index) => (
                 <div key={card.id} className="animate-fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                   <BettingCard card={card} onBet={() => {}} />
                 </div>
@@ -422,7 +319,7 @@ export default function Home() {
           subnets={subnets}
           onClose={() => setShowCreateModal(false)}
           onCardCreated={(card) => {
-            setCards(prev => [card, ...prev])
+            // Card is now on-chain, it will appear automatically when blockchain data refreshes
             setShowCreateModal(false)
           }}
         />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,7 @@ import {
   Clock,
   DollarSign
 } from 'lucide-react'
+import { useSubnet } from '@/components/SubnetProvider'
 
 interface BettingCardProps {
   card: BettingCardData
@@ -26,6 +27,9 @@ interface BettingCardProps {
 export function BettingCard({ card }: BettingCardProps) {
   const router = useRouter()
   const [isBookmarked, setIsBookmarked] = useState(false)
+  const [subnetName, setSubnetName] = useState<string | null>(null)
+  const [subnetPrice, setSubnetPrice] = useState<number | null>(null)
+  const subnetInfo = useSubnet(card.netuid)
   
   const cardId = `#${card.id.toString().padStart(6, '0')}`
   
@@ -49,6 +53,13 @@ export function BettingCard({ card }: BettingCardProps) {
   const totalLiquidity = card.totalYesShares + card.totalNoShares
   const yesProbability = totalLiquidity > 0 ? (card.totalYesShares / totalLiquidity) * 100 : 50
   const noProbability = 100 - yesProbability
+
+  useEffect(() => {
+    if (subnetInfo) {
+      setSubnetName(subnetInfo.subnet_name || `Subnet ${card.netuid}`)
+      setSubnetPrice(typeof subnetInfo.price === 'number' ? subnetInfo.price : null)
+    }
+  }, [subnetInfo, card.netuid])
 
   const getCardTypeIcon = () => {
     switch (card.type) {
@@ -98,6 +109,13 @@ export function BettingCard({ card }: BettingCardProps) {
             {/* Question */}
             <div className="text-white font-medium text-sm leading-tight">
               {card.question}
+            </div>
+            {/* Subnet info */}
+            <div className="text-white/60 text-xs mt-2">
+              {subnetName ? `${subnetName} (NetUID ${card.netuid})` : `Subnet ${card.netuid}`}
+              {typeof subnetPrice === 'number' && (
+                <span className="ml-2">• Price: {subnetPrice} TAO</span>
+              )}
             </div>
           </div>
           

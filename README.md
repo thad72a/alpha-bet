@@ -1,31 +1,37 @@
 # Alpha Bet - Bittensor Subnet Price Predictions
 
-A decentralized prediction market platform for Bittensor subnet alpha token prices, similar to Polymarket but specifically designed for the Bittensor ecosystem.
+A decentralized prediction market platform for Bittensor subnet alpha token prices, built on **Bittensor EVM**. Similar to Polymarket but specifically designed for the Bittensor ecosystem.
 
 ## Overview
 
-Alpha Bet allows users to create and participate in prediction markets for Bittensor subnet alpha token prices. Users can:
+Alpha Bet allows users to create and participate in prediction markets for Bittensor subnet alpha token prices using **native TAO**. Users can:
 
-- Create betting cards for specific subnet alpha price predictions
+- Create betting cards for specific subnet alpha price predictions (YES/NO or multiple options)
 - Bet on whether alpha tokens will reach certain prices by specific timestamps
-- Trade YES/NO shares in prediction markets
+- Trade shares in prediction markets using native TAO
 - Earn rewards for correct predictions
+- Support for both **Polkadot (SS58)** and **EVM (H160)** wallet addresses
 
 ## Features
 
 ### Smart Contract (Solidity)
-- **BettingCard Contract**: Manages all betting functionality
-- **Share Trading**: Users can buy/sell YES/NO shares
+- **BettingCard Contract**: Manages all betting functionality on Bittensor EVM
+- **Native TAO**: Uses native TAO tokens (no wrapped tokens needed)
+- **Binary & Multi-Option Markets**: Create YES/NO or multiple choice predictions
+- **Share Trading**: Users can buy/sell shares with native TAO
 - **Automatic Resolution**: Cards resolve based on actual alpha prices
-- **Fee System**: Platform takes a small fee from each transaction
+- **Fee System**: Platform takes a 2.5% fee from each transaction
 - **Liquidity Pool**: All bets contribute to a shared liquidity pool
+- **Gas Optimized**: Efficient storage and computation
 
 ### Frontend (Next.js + React)
 - **Modern UI**: Clean, responsive interface with Tailwind CSS
-- **Wallet Integration**: Connect with MetaMask, WalletConnect, etc.
+- **Bittensor EVM Integration**: Direct connection to Bittensor testnet/mainnet
+- **Dual Address Support**: Works with both SS58 (Polkadot) and H160 (EVM) addresses
+- **Wallet Integration**: Connect with MetaMask, WalletConnect, and Polkadot.js
 - **Real-time Data**: Fetches current subnet data and alpha prices
 - **Market Creation**: Easy interface to create new prediction markets
-- **Trading Interface**: Intuitive share purchasing system
+- **Trading Interface**: Intuitive share purchasing system with native TAO
 
 ## Project Structure
 
@@ -57,19 +63,22 @@ alpha-bet/
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
-- MetaMask or compatible wallet
+- MetaMask or compatible EVM wallet (for H160 addresses)
+- Optional: Polkadot.js wallet extension (for SS58 addresses)
+- Test TAO tokens from Bittensor testnet faucet
 
 ### Installation
 
-1. **Install frontend dependencies:**
+1. **Install all dependencies:**
 ```bash
 npm install
+cd contracts && npm install && cd ..
 ```
 
-2. **Install contract dependencies:**
+2. **Set up environment variables:**
 ```bash
-cd contracts
-npm install
+cp env.example .env.local
+# Edit .env.local with your values
 ```
 
 3. **Compile contracts:**
@@ -78,26 +87,52 @@ cd contracts
 npm run compile
 ```
 
-4. **Start development server:**
+### Smart Contract Deployment
+
+#### Deploy to Bittensor Testnet
+
+1. **Add private key to `.env.local`:**
+```env
+PRIVATE_KEY=your_private_key_here
+```
+
+2. **Fund your account** with testnet TAO from the [Bittensor Testnet Faucet](https://faucet.bittensor.com/)
+
+3. **Deploy to testnet:**
+```bash
+cd contracts
+npm run deploy:testnet
+```
+
+4. **Restart dev server** to pick up new contract addresses:
 ```bash
 npm run dev
 ```
 
-### Smart Contract Deployment
+#### Deploy to Bittensor Mainnet
 
-1. **Start local blockchain:**
 ```bash
 cd contracts
-npx hardhat node
+npm run deploy:mainnet
 ```
 
-2. **Deploy contracts:**
+**⚠️ Warning**: Make sure you have real TAO for gas fees on mainnet!
+
+#### Local Development (Optional)
+
+For local testing with Hardhat:
+
 ```bash
+# Terminal 1: Start local Hardhat node
 cd contracts
-npx hardhat run scripts/deploy.js --network localhost
-```
+npm run node
 
-3. **Update contract addresses** in the frontend code
+# Terminal 2: Deploy to localhost
+npm run deploy:localhost
+
+# Terminal 3: Start frontend
+npm run dev
+```
 
 ## How It Works
 
@@ -108,10 +143,12 @@ npx hardhat run scripts/deploy.js --network localhost
 4. Card becomes available for other users to bet on
 
 ### Placing Bets
-1. Users browse available betting cards
-2. Choose YES or NO shares (or both)
-3. Purchase shares with TAO tokens
-4. Shares are stored on-chain and can be redeemed after resolution
+1. Connect your wallet (MetaMask for EVM/H160 addresses)
+2. Ensure you have native TAO in your wallet
+3. Browse available betting cards
+4. Choose YES or NO shares (or specific options for multi-choice markets)
+5. Purchase shares with native TAO (includes 2.5% platform fee)
+6. Shares are stored on-chain and can be redeemed after resolution
 
 ### Resolution
 1. Cards automatically resolve at the specified timestamp
@@ -122,17 +159,35 @@ npx hardhat run scripts/deploy.js --network localhost
 ## Technical Details
 
 ### Smart Contract Features
+- **Native TAO Payments**: Uses Solidity `payable` functions for native TAO transfers
 - **ReentrancyGuard**: Prevents reentrancy attacks
 - **Ownable**: Contract owner can resolve cards and manage fees
-- **ERC20 Integration**: Uses TAO token for all transactions
+- **No Token Contract**: Direct integration with native TAO (no wrapping needed)
 - **Gas Optimized**: Efficient storage and computation
+- **Multi-Market Support**: Both binary (YES/NO) and multi-option markets
 
 ### Frontend Features
 - **TypeScript**: Full type safety
-- **Wagmi**: Modern React hooks for Ethereum
+- **Wagmi v1**: Modern React hooks for Ethereum/EVM
 - **RainbowKit**: Beautiful wallet connection UI
+- **Bittensor EVM**: Native integration with Bittensor testnet (Chain ID: 945) and mainnet (Chain ID: 966)
+- **Address Utilities**: Helper functions for SS58 and H160 address formats
 - **Responsive Design**: Works on all devices
 - **Real-time Updates**: Live data from Bittensor
+
+### Network Configuration
+
+**Bittensor Testnet**
+- Chain ID: 945
+- RPC URL: https://test.chain.opentensor.ai
+- Currency: tTAO (Test TAO)
+- Explorer: https://evm.taostats.io
+
+**Bittensor Mainnet**
+- Chain ID: 966
+- RPC URL: https://lite.chain.opentensor.ai
+- Currency: TAO
+- Explorer: https://evm.taostats.io
 
 ## Security Considerations
 
@@ -142,15 +197,33 @@ npx hardhat run scripts/deploy.js --network localhost
 - No admin can steal user funds
 - Cards resolve based on verifiable on-chain data
 
+## Address Format Support
+
+Bittensor supports two address formats:
+
+1. **SS58 (Substrate/Polkadot)**: Used for native Bittensor chain operations
+   - Example: `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`
+   - Used with Polkadot.js wallet
+   
+2. **H160 (EVM/Ethereum)**: Used for smart contract interactions on Bittensor EVM
+   - Example: `0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb`
+   - Used with MetaMask and other EVM wallets
+
+**For Alpha Bet**: You need an H160 (EVM) address to interact with the smart contracts. Use MetaMask or another EVM-compatible wallet.
+
 ## Future Enhancements
 
+- [x] Native TAO integration (no wrapped tokens)
+- [x] Multi-option market support
+- [x] Bittensor EVM deployment
 - [ ] Integration with Bittensor API for real-time price data
 - [ ] Advanced charting and analytics
+- [ ] Oracle integration for automated resolution
 - [ ] Mobile app development
 - [ ] Governance token for platform decisions
-- [ ] Cross-chain support for other tokens
-- [ ] Automated market making
+- [ ] Automated market making (AMM)
 - [ ] Social features and user profiles
+- [ ] Cross-subnet prediction markets
 
 ## Contributing
 

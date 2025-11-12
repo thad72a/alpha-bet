@@ -7,6 +7,28 @@ import { RainbowKitProvider, getDefaultWallets } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { ToastProvider } from '@/components/Providers'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { SubnetProvider } from '@/components/SubnetProvider'
+
+// Define Localhost chain configuration for development
+const localhost: Chain = {
+  id: 1337,
+  name: 'Localhost',
+  network: 'localhost',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['http://127.0.0.1:8545'],
+    },
+    public: {
+      http: ['http://127.0.0.1:8545'],
+    },
+  },
+  testnet: true,
+}
 
 // Define Bittensor Testnet chain configuration
 const bittensorTestnet: Chain = {
@@ -35,13 +57,15 @@ const bittensorTestnet: Chain = {
   testnet: true,
 }
 
-// Configure chains - Bittensor testnet as primary
+// Configure chains - Use localhost for development, or change to bittensorTestnet for testnet
 const { chains, publicClient } = configureChains(
-  [bittensorTestnet],
+  [localhost, bittensorTestnet],
   [
     jsonRpcProvider({
       rpc: (chain) => ({
-        http: chain.id === 945 
+        http: chain.id === 1337
+          ? process.env.NEXT_PUBLIC_RPC_URL || 'http://127.0.0.1:8545'
+          : chain.id === 945 
           ? 'https://test.chain.opentensor.ai'
           : 'http://127.0.0.1:8545',
       }),
@@ -66,7 +90,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <WagmiConfig config={config}>
         <RainbowKitProvider chains={chains}>
-          {children}
+          <SubnetProvider>
+            {children}
+          </SubnetProvider>
           <ToastProvider />
         </RainbowKitProvider>
       </WagmiConfig>
