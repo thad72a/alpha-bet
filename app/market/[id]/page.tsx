@@ -450,7 +450,7 @@ export default function MarketDetail() {
                               <p className="text-white/80 text-sm leading-relaxed break-words">
                                 {comment.text}
                               </p>
-                              {comment.likes > 0 && (
+                              {(comment.likes ?? 0) > 0 && (
                                 <div className="mt-2 text-xs text-white/40">
                                   ❤️ {comment.likes}
                                 </div>
