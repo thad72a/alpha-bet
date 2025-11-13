@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
+import { formatEther } from 'viem'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,63 +20,146 @@ import {
   Activity,
   ChevronDown,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  Send
 } from 'lucide-react'
 import { MarketChart } from '@/components/MarketChart'
 import { TradingPanel } from '@/components/TradingPanel'
 import { OrderBook } from '@/components/OrderBook'
+import { useCard, useUserShares } from '@/lib/contract-hooks'
+import { useSubnet } from '@/components/SubnetProvider'
+import { generateMarketContext } from '@/lib/market-context-generator'
+import { getComments, addComment, subscribeToComments, Comment } from '@/lib/supabase'
+import { showSuccessToast, showErrorToast } from '@/lib/errorHandling'
 
 export default function MarketDetail() {
   const params = useParams()
   const router = useRouter()
   const { address, isConnected } = useAccount()
-  const [market, setMarket] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const cardId = parseInt(params.id as string)
+  
+  // Fetch real blockchain data
+  const { card, isLoading: cardLoading, refetch: refetchCard } = useCard(cardId)
+  const subnetData = useSubnet(card?.netuid || 0)
+  const { shares: userShares, refetch: refetchShares } = useUserShares(address, cardId)
+  
+  // Local state
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [showRules, setShowRules] = useState(false)
-  const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy')
-  const [comments, setComments] = useState<any[]>([])
-  const [marketContext, setMarketContext] = useState('')
+  const [comments, setComments] = useState<Comment[]>([])
+  const [newComment, setNewComment] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [marketContextData, setMarketContextData] = useState<ReturnType<typeof generateMarketContext> | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
 
+  // Fix hydration errors - only render wallet-dependent content after mounting
   useEffect(() => {
-    // Mock market data - in production, fetch from contract/API
-    const mockMarket = {
-      id: parseInt(params.id as string),
-      question: 'Will Bitcoin dip below $100k before 2026?',
-      type: 'price-threshold',
-      netuid: 1,
-      bettedAlphaPrice: 100000,
-      currentAlphaPrice: 173553,
-      timestamp: new Date('2025-12-31').getTime() / 1000,
-      creator: '0x1234567890abcdef1234567890abcdef12345678',
-      totalYesShares: 51,
-      totalNoShares: 49,
-      totalLiquidity: 1735532,
-      volume: 1735532,
-      resolved: false,
-      outcome: false,
-      creationTime: Date.now() / 1000 - 86400,
-      rules: 'This market will immediately resolve to "Yes" if any Binance 1 minute candle for Bitcoin [BTC/USDT] between July 14, 2025, 14:00 and December 31, 2025, 23:59 UTC has a low price of $100,000 or below. Otherwise, this market will resolve to "No".',
-      description: 'Over the past week, as of mid-October 2025, recent developments have painted a cautiously bullish picture for Bitcoin\'s price trajectory this month. Technical analyses suggest bullish momentum, with price targets around $238-$240, while current trading levels hover near $221-$234 after an 11.57% surge.',
-      totalTraders: 605,
-      liquidity: 1735532,
-      endDate: new Date('2025-12-31').toISOString()
+    setIsMounted(true)
+  }, [])
+
+  // Generate market context when data is available
+  useEffect(() => {
+    if (card && subnetData) {
+      const context = generateMarketContext(card, subnetData)
+      setMarketContextData(context)
     }
+  }, [card, subnetData])
 
-    const mockComments = [
-      {
-        id: 1,
-        user: 'omegasecretum',
-        time: '12h ago',
-        text: 'I am a boy from Venezuela who is going through a difficult situation, there is no future, support me with a donation and change'
+  // Fetch comments from Supabase
+  useEffect(() => {
+    if (cardId) {
+      loadComments()
+      
+      // Subscribe to real-time comment updates
+      const subscription = subscribeToComments(cardId, (newComment) => {
+        setComments(prev => [newComment, ...prev])
+      })
+
+      return () => {
+        subscription.unsubscribe()
       }
-    ]
+    }
+  }, [cardId])
 
-    setMarket(mockMarket)
-    setComments(mockComments)
-    setMarketContext(mockMarket.description)
-    setLoading(false)
-  }, [params.id])
+  const loadComments = async () => {
+    const fetchedComments = await getComments(cardId)
+    setComments(fetchedComments)
+  }
+
+  const handleSubmitComment = async () => {
+    if (!newComment.trim() || !address) return
+
+    setIsSubmittingComment(true)
+    try {
+      const comment = await addComment(cardId, address, newComment.trim())
+      if (comment) {
+        showSuccessToast('Comment posted successfully!')
+        setNewComment('')
+        // Comment will be added via real-time subscription
+      } else {
+        showErrorToast(new Error('Failed to post comment'), 'Comment Error')
+      }
+    } catch (error: any) {
+      showErrorToast(error, 'Failed to post comment')
+    } finally {
+      setIsSubmittingComment(false)
+    }
+  }
+
+  // Calculate market stats
+  const market = useMemo(() => {
+    if (!card) return null
+
+    const totalYes = Number(formatEther(card.totalYesShares))
+    const totalNo = Number(formatEther(card.totalNoShares))
+    const totalLiquidity = Number(formatEther(card.totalLiquidity))
+    const totalShares = totalYes + totalNo
+    const yesPercentage = totalShares > 0 ? (totalYes / totalShares) * 100 : 50
+    const noPercentage = 100 - yesPercentage
+
+    return {
+      id: card.id,
+      question: marketContextData?.question || `Market #${card.id}`,
+      title: marketContextData?.title || 'Prediction Market',
+      type: card.cardType === 0 ? 'binary' : 'multi',
+      netuid: card.netuid,
+      bettedAlphaPrice: Number(formatEther(card.bettedAlphaPrice)),
+      currentAlphaPrice: subnetData?.price || 0,
+      timestamp: Number(card.timestamp),
+      creator: card.creator,
+      totalYesShares: yesPercentage,
+      totalNoShares: noPercentage,
+      totalLiquidity: totalLiquidity,
+      volume: totalLiquidity, // Simplified - would need historical data for accurate volume
+      resolved: card.resolved,
+      outcome: card.outcome,
+      creationTime: Number(card.creationTime),
+      rules: marketContextData?.rules || 'Rules will be displayed once market context is loaded.',
+      description: marketContextData?.description || 'Loading market description...',
+      background: marketContextData?.background || '',
+      totalTraders: 0, // Would need to track this separately
+      liquidity: totalLiquidity,
+      endDate: new Date(Number(card.timestamp) * 1000).toISOString(),
+      optionNames: card.optionNames,
+      cardType: card.cardType
+    }
+  }, [card, subnetData, marketContextData])
+
+  // Calculate user's position
+  const userPosition = useMemo(() => {
+    if (!userShares) return null
+
+    const yesAmount = Number(formatEther(userShares.yesShares))
+    const noAmount = Number(formatEther(userShares.noShares))
+
+    return {
+      yes: yesAmount,
+      no: noAmount,
+      total: yesAmount + noAmount
+    }
+  }, [userShares])
+
+  const loading = cardLoading
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href)
@@ -133,7 +217,7 @@ export default function MarketDetail() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <ConnectButton />
+              {isMounted && <ConnectButton />}
             </div>
           </div>
         </div>
@@ -243,10 +327,12 @@ export default function MarketDetail() {
                   </Button>
                 </div>
               </CardHeader>
-              {marketContext && (
+              {marketContextData?.description && (
                 <CardContent className="pt-0">
-                  <p className="text-white/80 leading-relaxed">{marketContext}</p>
-                  <p className="text-xs text-white/40 mt-4 italic">Results are experimental.</p>
+                  <div className="text-white/80 leading-relaxed whitespace-pre-line">
+                    {marketContextData.description}
+                  </div>
+                  <p className="text-xs text-white/40 mt-4 italic">Context generated from blockchain and network data.</p>
                 </CardContent>
               )}
             </Card>
@@ -283,36 +369,103 @@ export default function MarketDetail() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isConnected && (
+                {/* Comment Input */}
+                {isConnected ? (
                   <div className="glass rounded-lg p-4">
                     <Input 
-                      placeholder="Add a comment"
-                      className="bg-black/40 border-white/20 text-white placeholder:text-white/40 mb-2"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="bg-black/40 border-white/20 text-white placeholder:text-white/40 mb-3"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSubmitComment()
+                        }
+                      }}
                     />
-                    <div className="flex justify-end">
-                      <Button className="btn-primary" size="sm">Post</Button>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-white/40">
+                        Press Enter to post, Shift+Enter for new line
+                      </span>
+                      <Button 
+                        className="btn-primary" 
+                        size="sm"
+                        onClick={handleSubmitComment}
+                        disabled={!newComment.trim() || isSubmittingComment}
+                      >
+                        {isSubmittingComment ? (
+                          <span className="flex items-center space-x-2">
+                            <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <span>Posting...</span>
+                          </span>
+                        ) : (
+                          <>
+                            <Send className="w-3 h-3 mr-1" />
+                            Post
+                          </>
+                        )}
+                      </Button>
                     </div>
+                  </div>
+                ) : (
+                  <div className="glass rounded-lg p-4 text-center">
+                    <p className="text-white/60 mb-3">Connect your wallet to comment</p>
+                    {isMounted && <ConnectButton />}
                   </div>
                 )}
                 
+                {/* Comments List */}
                 {comments.length > 0 ? (
-                  comments.map((comment) => (
-                    <div key={comment.id} className="glass rounded-lg p-4">
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-full"></div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-white font-medium text-sm">{comment.user}</span>
-                            <span className="text-white/40 text-xs">{comment.time}</span>
+                  <div className="space-y-3">
+                    {comments.map((comment) => {
+                      const commentDate = new Date(comment.created_at)
+                      const now = new Date()
+                      const diffMs = now.getTime() - commentDate.getTime()
+                      const diffMins = Math.floor(diffMs / 60000)
+                      const diffHours = Math.floor(diffMs / 3600000)
+                      const diffDays = Math.floor(diffMs / 86400000)
+                      
+                      let timeAgo = ''
+                      if (diffMins < 1) timeAgo = 'just now'
+                      else if (diffMins < 60) timeAgo = `${diffMins}m ago`
+                      else if (diffHours < 24) timeAgo = `${diffHours}h ago`
+                      else timeAgo = `${diffDays}d ago`
+
+                      return (
+                        <div key={comment.id} className="glass rounded-lg p-4 hover:bg-white/5 transition-colors">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-xs font-semibold">
+                                {comment.user_address.slice(2, 4).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="text-white font-medium text-sm truncate">
+                                  {comment.user_address.slice(0, 6)}...{comment.user_address.slice(-4)}
+                                </span>
+                                <span className="text-white/40 text-xs flex-shrink-0">{timeAgo}</span>
+                              </div>
+                              <p className="text-white/80 text-sm leading-relaxed break-words">
+                                {comment.text}
+                              </p>
+                              {comment.likes > 0 && (
+                                <div className="mt-2 text-xs text-white/40">
+                                  ❤️ {comment.likes}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-white/80 text-sm">{comment.text}</p>
                         </div>
-                      </div>
-                    </div>
-                  ))
+                      )
+                    })}
+                  </div>
                 ) : (
-                  <div className="text-center py-8 text-white/60">
-                    No comments yet. Be the first to comment!
+                  <div className="text-center py-12 text-white/60">
+                    <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                    <p className="text-lg font-medium mb-1">No comments yet</p>
+                    <p className="text-sm">Be the first to share your thoughts on this market!</p>
                   </div>
                 )}
               </CardContent>

@@ -36,6 +36,12 @@ export default function Home() {
   const [selectedSubnet, setSelectedSubnet] = useState<number | null>(null)
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'resolved'>('active')
   const [sortBy, setSortBy] = useState<'volume' | 'deadline' | 'newest' | 'oldest'>('volume')
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Fix hydration errors - only render wallet-dependent content after mounting
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
   
   // Fetch real data from blockchain and Bittensor network
   const { summaries, lastUpdated } = useSubnetSummaries()
@@ -114,7 +120,7 @@ export default function Home() {
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 <span>Live Markets</span>
               </div>
-              <ConnectButton />
+              {isMounted && <ConnectButton />}
             </div>
           </div>
         </div>
@@ -296,7 +302,7 @@ export default function Home() {
                 ) : (
                   <div className="space-y-4">
                     <p className="text-white/50">Connect your wallet to create markets</p>
-                    <ConnectButton />
+                    {isMounted && <ConnectButton />}
                   </div>
                 )}
               </CardContent>

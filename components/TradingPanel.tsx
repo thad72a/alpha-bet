@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { parseEther, formatEther } from 'viem'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,51 +9,98 @@ import { useAccount, useContractWrite, usePrepareContractWrite, useWaitForTransa
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { showErrorToast, showSuccessToast, showLoadingToast, dismissToast } from '@/lib/errorHandling'
 import { BETTING_CONTRACT_ADDRESS, BETTING_ABI } from '@/lib/contracts'
-import { AlertCircle } from 'lucide-react'
+import { addBetHistory } from '@/lib/supabase'
+import { AlertCircle, TrendingUp, Info } from 'lucide-react'
 
 interface TradingPanelProps {
   market: any
 }
 
 export function TradingPanel({ market }: TradingPanelProps) {
-  const { isConnected } = useAccount()
-  const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy')
+  const { address, isConnected } = useAccount()
   const [selectedOutcome, setSelectedOutcome] = useState<'yes' | 'no'>('yes')
-  const [amount, setAmount] = useState<string>('0')
-  const [balance] = useState(0)
+  const [amount, setAmount] = useState<string>('')
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [loadingToastId, setLoadingToastId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
 
-  const presetAmounts = [1, 20, 100]
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const presetAmounts = [1, 3, 5, 10]
 
   const handlePresetAmount = (preset: number) => {
     setAmount(preset.toString())
-    setError(null)
   }
 
-  const handleMaxAmount = () => {
-    setAmount(balance.toString())
-    setError(null)
-  }
+  // Get current shares from market (already in percentage format from market detail page)
+  const currentYesProb = market.totalYesShares || 50
+  const currentNoProb = market.totalNoShares || 50
 
-  const yesProbability = ((market.totalYesShares / (market.totalYesShares + market.totalNoShares)) * 100).toFixed(0)
-  const noProbability = (100 - parseFloat(yesProbability)).toFixed(0)
+  // Calculate total shares in wei for ROI calculation
+  // Need to convert back from percentage to actual shares
+  const totalLiquidityWei = useMemo(() => {
+    try {
+      return parseEther(market.totalLiquidity?.toString() || '0')
+    } catch {
+      return 0n
+    }
+  }, [market.totalLiquidity])
 
-  const estimatedShares = amount ? (parseFloat(amount) / (selectedOutcome === 'yes' ? parseFloat(yesProbability) : parseFloat(noProbability)) * 100).toFixed(2) : '0'
+  const currentYesSharesWei = useMemo(() => {
+    return (totalLiquidityWei * BigInt(Math.floor(currentYesProb))) / 100n
+  }, [totalLiquidityWei, currentYesProb])
+
+  const currentNoSharesWei = useMemo(() => {
+    return (totalLiquidityWei * BigInt(Math.floor(currentNoProb))) / 100n
+  }, [totalLiquidityWei, currentNoProb])
+
+  // Calculate new probabilities after user's bet
+  const amountWei = useMemo(() => {
+    try {
+      return amount ? parseEther(amount) : 0n
+    } catch {
+      return 0n
+    }
+  }, [amount])
+
+  const newYesShares = selectedOutcome === 'yes' ? currentYesSharesWei + amountWei : currentYesSharesWei
+  const newNoShares = selectedOutcome === 'no' ? currentNoSharesWei + amountWei : currentNoSharesWei
+  const newTotalShares = newYesShares + newNoShares
+
+  const newYesProb = newTotalShares > 0n
+    ? Number(newYesShares) / Number(newTotalShares) * 100
+    : 50
+  const newNoProb = 100 - newYesProb
+
+  const probChange = selectedOutcome === 'yes' 
+    ? newYesProb - currentYesProb 
+    : newNoProb - currentNoProb
+
+  // Calculate potential payout (ROI)
+  const userShares = amountWei
+  const sharesOnUserSide = selectedOutcome === 'yes' ? newYesShares : newNoShares
+  const totalPool = currentYesSharesWei + currentNoSharesWei
+
+  const potentialPayout = sharesOnUserSide > 0n && totalPool > 0n
+    ? (Number(userShares) / Number(sharesOnUserSide)) * Number(totalPool + amountWei)
+    : 0
+
+  const profit = potentialPayout - Number(formatEther(amountWei))
+  const roiPercentage = amountWei > 0n ? (profit / Number(formatEther(amountWei))) * 100 : 0
 
   // Prepare contract write for purchasing shares with native TAO
-  const yesShares = selectedOutcome === 'yes' ? BigInt(Math.floor(parseFloat(amount || '0') * 1e18)) : BigInt(0)
-  const noShares = selectedOutcome === 'no' ? BigInt(Math.floor(parseFloat(amount || '0') * 1e18)) : BigInt(0)
-  const totalValue = yesShares + noShares
+  const yesShares = selectedOutcome === 'yes' ? amountWei : 0n
+  const noShares = selectedOutcome === 'no' ? amountWei : 0n
 
   const { config, error: prepareError } = usePrepareContractWrite({
     address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
     abi: BETTING_ABI,
     functionName: 'purchaseShares',
     args: [BigInt(market.id), yesShares, noShares],
-    value: totalValue, // Send native TAO with the transaction
-    enabled: Boolean(isConnected && amount && parseFloat(amount) > 0),
+    value: amountWei,
+    enabled: Boolean(isConnected && amountWei > 0n),
   })
 
   const { data: txData, write: purchaseShares, error: writeError, reset } = useContractWrite(config)
@@ -66,204 +114,211 @@ export function TradingPanel({ market }: TradingPanelProps) {
     if (isConfirmed && loadingToastId) {
       dismissToast(loadingToastId)
       setLoadingToastId(null)
-      showSuccessToast(`Successfully purchased ${selectedOutcome.toUpperCase()} shares!`)
+      showSuccessToast(`Successfully bet ${amount} TAO on ${selectedOutcome.toUpperCase()}!`)
+      
+      // Save to Supabase
+      if (address && txData?.hash) {
+        addBetHistory(
+          market.id,
+          address,
+          selectedOutcome,
+          amount,
+          txData.hash
+        )
+      }
+
       setIsPurchasing(false)
-      setAmount('0')
-      setError(null)
+      setAmount('')
+      
+      // Refresh page to show updated stats
+      window.location.reload()
     }
-  }, [isConfirmed, loadingToastId, selectedOutcome])
+  }, [isConfirmed, loadingToastId, selectedOutcome, amount, address, txData, market.id])
 
   // Handle write errors
   useEffect(() => {
-    if (writeError) {
-      if (loadingToastId) {
-        dismissToast(loadingToastId)
-        setLoadingToastId(null)
+    if (writeError && loadingToastId) {
+      dismissToast(loadingToastId)
+      setLoadingToastId(null)
+      
+      const errorMessage = writeError?.message || ''
+      if (errorMessage.includes('rate limit') || errorMessage.includes('Request exceeds')) {
+        showErrorToast(
+          new Error('RPC rate limited. Please wait 30 seconds and try again.'),
+          'Network Busy'
+        )
+      } else {
+        showErrorToast(writeError, 'Failed to place bet')
       }
-      showErrorToast(writeError, 'Failed to purchase shares')
-      setIsPurchasing(false)
-      setError('Transaction failed. Please try again.')
-      setTimeout(() => {
-        setError(null)
-        reset()
-      }, 5000)
-    }
-  }, [writeError, loadingToastId, reset])
-
-  // Show prepare errors
-  useEffect(() => {
-    if (prepareError && isPurchasing) {
-      setError('Unable to prepare transaction. Please check your inputs.')
       setIsPurchasing(false)
     }
-  }, [prepareError, isPurchasing])
+  }, [writeError, loadingToastId])
 
   const handlePurchase = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      setError('Please enter a valid amount')
-      return
-    }
-
-    if (parseFloat(amount) > balance) {
-      setError('Insufficient balance')
+      showErrorToast(new Error('Please enter a valid amount'), 'Invalid amount')
       return
     }
 
     if (!purchaseShares) {
-      setError('Unable to create transaction. Please try again.')
+      showErrorToast(new Error('Unable to prepare transaction'), 'Transaction error')
       return
     }
 
-    setError(null)
     setIsPurchasing(true)
 
     try {
-      const toastId = showLoadingToast(`Purchasing ${selectedOutcome.toUpperCase()} shares...`)
+      const toastId = showLoadingToast(`Placing bet on ${selectedOutcome.toUpperCase()}...`)
       setLoadingToastId(toastId)
+      
+      // Add small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       purchaseShares()
     } catch (err: any) {
       if (loadingToastId) {
         dismissToast(loadingToastId)
         setLoadingToastId(null)
       }
-      showErrorToast(err, 'Failed to purchase shares')
+      showErrorToast(err, 'Failed to place bet')
       setIsPurchasing(false)
-      setError('Failed to submit transaction')
     }
   }
 
   return (
     <Card className="premium-card">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex space-x-2 w-full">
-            <button
-              onClick={() => setActiveTab('buy')}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'buy'
-                  ? 'bg-white text-black'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              Buy
-            </button>
-            <button
-              onClick={() => setActiveTab('sell')}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'sell'
-                  ? 'bg-white text-black'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              Sell
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-white/60">Market</span>
-          <button className="text-sm text-white/80 hover:text-white flex items-center space-x-1">
-            <span>Polymarket</span>
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
+        <h3 className="text-lg font-semibold text-white">Place Your Bet</h3>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {/* Outcome Selection */}
         <div>
-          <label className="text-sm text-white/60 mb-2 block">Outcome</label>
-          <div className="flex space-x-2">
+          <label className="text-sm text-white/60 mb-3 block font-medium">Select Outcome</label>
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setSelectedOutcome('yes')}
-              className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`py-4 px-4 rounded-xl text-base font-bold transition-all ${
                 selectedOutcome === 'yes'
-                  ? 'btn-yes'
-                  : 'glass text-white/60 hover:text-white'
+                  ? 'btn-yes shadow-lg shadow-green-500/20'
+                  : 'glass text-white/60 hover:text-white hover:bg-white/10'
               }`}
             >
-              Yes {yesProbability}%
+              <div>Yes</div>
+              <div className="text-xs font-normal mt-1 opacity-80">
+                {currentYesProb.toFixed(1)}%
+              </div>
             </button>
             <button
               onClick={() => setSelectedOutcome('no')}
-              className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`py-4 px-4 rounded-xl text-base font-bold transition-all ${
                 selectedOutcome === 'no'
-                  ? 'btn-no'
-                  : 'glass text-white/60 hover:text-white'
+                  ? 'btn-no shadow-lg shadow-red-500/20'
+                  : 'glass text-white/60 hover:text-white hover:bg-white/10'
               }`}
             >
-              No {noProbability}%
+              <div>No</div>
+              <div className="text-xs font-normal mt-1 opacity-80">
+                {currentNoProb.toFixed(1)}%
+              </div>
             </button>
           </div>
         </div>
 
         {/* Amount Input */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm text-white/60">Amount</label>
-            <span className="text-sm text-white/60">Balance ${balance.toFixed(2)}</span>
-          </div>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60">$</span>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className="pl-7 bg-black/40 border-white/20 text-white text-lg placeholder:text-white/40 h-12"
-            />
-          </div>
+          <label className="text-sm text-white/60 mb-3 block font-medium">Bet Amount (TAO)</label>
+          
+          <Input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Enter amount"
+            className="bg-black/40 border-white/20 text-white text-lg placeholder:text-white/40 h-14 mb-3"
+            step="0.1"
+            min="0"
+          />
           
           {/* Preset Amounts */}
-          <div className="grid grid-cols-4 gap-2 mt-2">
+          <div className="grid grid-cols-4 gap-2">
             {presetAmounts.map((preset) => (
               <button
                 key={preset}
                 onClick={() => handlePresetAmount(preset)}
-                className="glass hover:bg-white/10 py-2 rounded-lg text-sm text-white/80 hover:text-white transition-all"
+                className={`py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                  amount === preset.toString()
+                    ? 'bg-white text-black'
+                    : 'glass text-white/80 hover:text-white hover:bg-white/10'
+                }`}
               >
-                +${preset}
+                {preset} TAO
               </button>
             ))}
-            <button
-              onClick={handleMaxAmount}
-              className="glass hover:bg-white/10 py-2 rounded-lg text-sm text-white/80 hover:text-white transition-all"
-            >
-              Max
-            </button>
           </div>
         </div>
 
-        {/* Estimated Shares */}
-        {parseFloat(amount) > 0 && (
-          <div className="glass rounded-lg p-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-white/60">Avg price</span>
-              <span className="text-white">${(parseFloat(amount) / parseFloat(estimatedShares)).toFixed(2)}</span>
+        {/* ROI Calculation */}
+        {amountWei > 0n && (
+          <div className="glass rounded-xl p-4 space-y-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-green-400" />
+              <h4 className="text-sm font-semibold text-white">Expected Returns</h4>
             </div>
-            <div className="flex items-center justify-between text-sm mt-2">
-              <span className="text-white/60">Shares</span>
-              <span className="text-white">{estimatedShares}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm mt-2">
-              <span className="text-white/60">Potential return</span>
-              <span className="text-white font-medium">
-                ${(parseFloat(estimatedShares) - parseFloat(amount)).toFixed(2)} 
-                <span className="text-white/60 ml-1">
-                  ({((parseFloat(estimatedShares) / parseFloat(amount) - 1) * 100).toFixed(1)}%)
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/60">New Probability</span>
+                <span className="text-white font-medium">
+                  {selectedOutcome === 'yes' ? newYesProb.toFixed(1) : newNoProb.toFixed(1)}%
+                  <span className={`ml-1 text-xs ${probChange > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    ({probChange > 0 ? '+' : ''}{probChange.toFixed(1)}%)
+                  </span>
                 </span>
-              </span>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/60">Your Stake</span>
+                <span className="text-white font-medium">{amount} TAO</span>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/60">If You Win</span>
+                <span className="text-white font-medium">
+                  {potentialPayout.toFixed(3)} TAO
+                </span>
+              </div>
+
+              <div className="border-t border-white/10 pt-2 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/60 text-sm">Potential Profit</span>
+                  <div className="text-right">
+                    <div className="text-white font-bold">
+                      +{profit.toFixed(3)} TAO
+                    </div>
+                    <div className={`text-xs font-semibold ${roiPercentage > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {roiPercentage > 0 ? '+' : ''}{roiPercentage.toFixed(1)}% ROI
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-2 mt-3 p-2 bg-blue-500/10 rounded-lg">
+              <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-blue-200">
+                ROI assumes market resolves in your favor. 2.5% platform fee applied.
+              </p>
             </div>
           </div>
         )}
 
         {/* Error Display */}
-        {error && (
+        {prepareError && amountWei > 0n && (
           <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start space-x-2">
             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-red-200">{error}</p>
+            <p className="text-xs text-red-200">
+              Unable to prepare transaction. Please check your balance and try again.
+            </p>
           </div>
         )}
 
@@ -277,30 +332,27 @@ export function TradingPanel({ market }: TradingPanelProps) {
 
         {/* Action Button */}
         {!isConnected ? (
-          <div className="pt-2">
-            <ConnectButton.Custom>
-              {({ openConnectModal }) => (
-                <Button 
-                  onClick={openConnectModal}
-                  className="w-full btn-primary h-12 text-base font-semibold"
-                >
-                  Connect Wallet
-                </Button>
-              )}
-            </ConnectButton.Custom>
-          </div>
-        ) : balance === 0 ? (
-          <Button 
-            className="w-full btn-secondary h-12 text-base font-semibold"
-            disabled
-          >
-            Unavailable
-          </Button>
+          isMounted && (
+            <div className="pt-2">
+              <ConnectButton.Custom>
+                {({ openConnectModal }) => (
+                  <Button 
+                    onClick={openConnectModal}
+                    className="w-full btn-primary h-14 text-base font-bold rounded-xl"
+                  >
+                    Connect Wallet to Bet
+                  </Button>
+                )}
+              </ConnectButton.Custom>
+            </div>
+          )
         ) : (
           <Button 
             onClick={handlePurchase}
-            className="w-full btn-primary h-12 text-base font-semibold"
-            disabled={!amount || parseFloat(amount) === 0 || parseFloat(amount) > balance || isPurchasing || isConfirming}
+            className={`w-full h-14 text-base font-bold rounded-xl ${
+              selectedOutcome === 'yes' ? 'btn-yes' : 'btn-no'
+            }`}
+            disabled={!amount || parseFloat(amount) <= 0 || isPurchasing || isConfirming || !purchaseShares}
           >
             {isPurchasing || isConfirming ? (
               <span className="flex items-center space-x-2">
@@ -308,36 +360,28 @@ export function TradingPanel({ market }: TradingPanelProps) {
                 <span>{isConfirming ? 'Confirming...' : 'Processing...'}</span>
               </span>
             ) : (
-              `${activeTab === 'buy' ? 'Buy' : 'Sell'} ${selectedOutcome === 'yes' ? 'Yes' : 'No'}`
+              `Bet ${amount || '0'} TAO on ${selectedOutcome.toUpperCase()}`
             )}
           </Button>
         )}
 
-        {/* Terms */}
-        <p className="text-xs text-white/40 text-center">
-          By trading, you agree to the{' '}
-          <a href="#" className="text-white/60 hover:text-white underline">
-            Terms of Use
-          </a>
-        </p>
-
         {/* Market Stats */}
-        <div className="glass rounded-lg p-4 space-y-3 mt-6">
-          <h4 className="text-sm font-semibold text-white mb-3">All</h4>
+        <div className="glass rounded-lg p-4 space-y-3 border-t border-white/10 pt-5">
+          <h4 className="text-sm font-semibold text-white mb-3">Market Stats</h4>
           
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
+              <span className="text-white/60">Total Liquidity</span>
+              <span className="text-white">{market.liquidity?.toFixed(2) || '0'} TAO</span>
+            </div>
+            
+            <div className="flex items-center justify-between text-sm">
               <span className="text-white/60">Volume</span>
-              <span className="text-white">${(market.volume / 1000).toFixed(1)}K</span>
+              <span className="text-white">{market.volume?.toFixed(2) || '0'} TAO</span>
             </div>
             
             <div className="flex items-center justify-between text-sm">
-              <span className="text-white/60">Liquidity</span>
-              <span className="text-white">${(market.liquidity / 1000).toFixed(1)}K</span>
-            </div>
-            
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-white/60">Expires</span>
+              <span className="text-white/60">Deadline</span>
               <span className="text-white">
                 {new Date(market.endDate).toLocaleDateString('en-US', { 
                   month: 'short', 
@@ -346,71 +390,27 @@ export function TradingPanel({ market }: TradingPanelProps) {
                 })}
               </span>
             </div>
-          </div>
-        </div>
 
-        {/* Related Markets */}
-        <div className="pt-4 border-t border-white/10">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-white">Related</h4>
-            <button className="text-xs text-white/60 hover:text-white">View all</button>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="glass rounded-lg p-3 hover:bg-white/5 transition-all cursor-pointer">
-              <div className="flex items-start space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-orange-500/20 to-orange-600/10 rounded flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg">₿</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white/80 line-clamp-2 mb-1">
-                    Will Bitcoin hit $100k or $130k first?
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/60">53%</span>
-                    <span className="text-xs text-white/60">100k</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass rounded-lg p-3 hover:bg-white/5 transition-all cursor-pointer">
-              <div className="flex items-start space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg">Ξ</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white/80 line-clamp-2 mb-1">
-                    Ethereum Price Target
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/60">40%</span>
-                    <span className="text-xs text-white/60">Up</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass rounded-lg p-3 hover:bg-white/5 transition-all cursor-pointer">
-              <div className="flex items-start space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-black/40 to-gray-800/20 rounded flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg">✕</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white/80 line-clamp-2 mb-1">
-                    XRP Price Target
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/60">40%</span>
-                    <span className="text-xs text-white/60">Up</span>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/60">Status</span>
+              <span className={`text-xs px-2 py-1 rounded ${
+                market.resolved 
+                  ? 'bg-gray-500/20 text-gray-300' 
+                  : 'bg-green-500/20 text-green-300'
+              }`}>
+                {market.resolved ? 'Resolved' : 'Active'}
+              </span>
             </div>
           </div>
         </div>
+
+        {/* Terms */}
+        <p className="text-xs text-white/40 text-center mt-4">
+          By placing a bet, you agree to the platform's terms and conditions.
+        </p>
       </CardContent>
     </Card>
   )
 }
+
 

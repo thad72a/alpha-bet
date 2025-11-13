@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BettingCardData } from '@/types/subnet'
 import { formatTAO, formatTimestamp } from '@/lib/bittensor'
+import { BettingModal } from '@/components/BettingModal'
 import { 
   Copy, 
   Bookmark, 
@@ -27,6 +28,8 @@ interface BettingCardProps {
 export function BettingCard({ card }: BettingCardProps) {
   const router = useRouter()
   const [isBookmarked, setIsBookmarked] = useState(false)
+  const [showBettingModal, setShowBettingModal] = useState(false)
+  const [initialOutcome, setInitialOutcome] = useState<'yes' | 'no'>('yes')
   const [subnetName, setSubnetName] = useState<string | null>(null)
   const [subnetPrice, setSubnetPrice] = useState<number | null>(null)
   const subnetInfo = useSubnet(card.netuid)
@@ -151,16 +154,26 @@ export function BettingCard({ card }: BettingCardProps) {
 
       <CardContent className="flex-1 flex flex-col justify-between p-6">
         {/* Main Betting Buttons */}
-        <div className="flex space-x-4 mb-6" onClick={handleButtonClick}>
+        <div className="flex space-x-4 mb-6">
           <Button
             className="btn-yes flex-1 font-bold text-lg h-14 rounded-xl transition-all duration-200"
             disabled={!canBet}
+            onClick={(e) => {
+              e.stopPropagation()
+              setInitialOutcome('yes')
+              setShowBettingModal(true)
+            }}
           >
             Yes
           </Button>
           <Button
             className="btn-no flex-1 font-bold text-lg h-14 rounded-xl transition-all duration-200"
             disabled={!canBet}
+            onClick={(e) => {
+              e.stopPropagation()
+              setInitialOutcome('no')
+              setShowBettingModal(true)
+            }}
           >
             No
           </Button>
@@ -200,6 +213,20 @@ export function BettingCard({ card }: BettingCardProps) {
           </div>
         </div>
       </CardContent>
+
+      {/* Betting Modal */}
+      <BettingModal
+        isOpen={showBettingModal}
+        onClose={() => setShowBettingModal(false)}
+        cardId={card.id}
+        initialOutcome={initialOutcome}
+        currentYesShares={BigInt(Math.floor(card.totalYesShares * 1e18))}
+        currentNoShares={BigInt(Math.floor(card.totalNoShares * 1e18))}
+        onSuccess={() => {
+          // Optionally refresh card data here
+          window.location.reload() // Simple refresh for now
+        }}
+      />
     </Card>
   )
 }
