@@ -5,7 +5,7 @@
  */
 
 import { BettingCardData as BlockchainCardData } from './contract-hooks'
-import { BackendSubnetSummary } from './SubnetProvider'
+import { BackendSubnetSummary } from './backend'
 import { formatEther } from 'viem'
 
 interface MarketContext {
