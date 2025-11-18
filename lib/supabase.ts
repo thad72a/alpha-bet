@@ -14,12 +14,17 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
+// Use placeholder values if env vars not set (to avoid build errors)
+const url = supabaseUrl || 'https://placeholder.supabase.co'
+const key = supabaseAnonKey || 'placeholder-key'
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️  Supabase not configured. Comments and charts will not work.')
   console.warn('   Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(url, key)
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
 
 // Database Types
 export interface Comment {

@@ -202,7 +202,7 @@ export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: Be
               className="p-2 text-white/40 hover:text-white/80"
               onClick={(e) => {
                 e.stopPropagation()
-                setIsBookmarked(!isBookmarked)
+                // Gift/reward functionality - placeholder
               }}
             >
               <Gift className="w-4 h-4" />
