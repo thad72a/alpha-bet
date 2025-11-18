@@ -3,9 +3,10 @@
  * Hooks to fetch real data from the BettingCard contract on Bittensor EVM
  */
 
-import { useContractRead, useContractReads } from 'wagmi'
+import { useContractRead, useContractReads, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi'
 import { BETTING_CONTRACT_ADDRESS, BETTING_ABI } from './contracts'
 import { useMemo } from 'react'
+import { parseEther } from 'viem'
 
 export interface BettingCardData {
   id: number
@@ -248,6 +249,261 @@ export function useAccumulatedFees() {
   return {
     fees: data as bigint | undefined,
     isLoading,
+  }
+}
+
+// ===== RESOLUTION SYSTEM HOOKS =====
+
+export interface ResolutionProposal {
+  proposer: string
+  proposedPrice: bigint
+  proposedOption: bigint
+  bondAmount: bigint
+  proposalTime: bigint
+  disputed: boolean
+  challenger: string
+  challengerBond: bigint
+  yesVotes: bigint
+  noVotes: bigint
+  votingActive: boolean
+}
+
+/**
+ * Get resolution proposal for a card
+ */
+export function useProposal(cardId: number) {
+  const { data, isLoading, refetch } = useContractRead({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'getProposal',
+    args: [BigInt(cardId)],
+    watch: true,
+  })
+
+  return {
+    proposal: data as ResolutionProposal | undefined,
+    hasProposal: data ? (data as ResolutionProposal).proposer !== '0x0000000000000000000000000000000000000000' : false,
+    isLoading,
+    refetch,
+  }
+}
+
+/**
+ * Get user's voting power for a card
+ */
+export function useVotingPower(cardId: number, userAddress: string | undefined) {
+  const { data, isLoading } = useContractRead({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'getVotingPower',
+    args: [BigInt(cardId), userAddress as `0x${string}`],
+    enabled: !!userAddress,
+    watch: true,
+  })
+
+  return {
+    votingPower: data as bigint | undefined,
+    isLoading,
+  }
+}
+
+/**
+ * Check if user has voted on a proposal
+ */
+export function useHasVoted(cardId: number, userAddress: string | undefined) {
+  const { data, isLoading } = useContractRead({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'hasUserVoted',
+    args: [BigInt(cardId), userAddress as `0x${string}`],
+    enabled: !!userAddress,
+    watch: true,
+  })
+
+  return {
+    hasVoted: data as boolean | undefined,
+    isLoading,
+  }
+}
+
+/**
+ * Get resolution bond amount
+ */
+export function useResolutionBond() {
+  const { data, isLoading } = useContractRead({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'resolutionBond',
+    watch: true,
+  })
+
+  return {
+    bond: data as bigint | undefined,
+    isLoading,
+  }
+}
+
+/**
+ * Get dispute period duration
+ */
+export function useDisputePeriod() {
+  const { data, isLoading } = useContractRead({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'disputePeriod',
+    watch: true,
+  })
+
+  return {
+    period: data as bigint | undefined,
+    isLoading,
+  }
+}
+
+/**
+ * Get voting period duration
+ */
+export function useVotingPeriod() {
+  const { data, isLoading } = useContractRead({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'votingPeriod',
+    watch: true,
+  })
+
+  return {
+    period: data as bigint | undefined,
+    isLoading,
+  }
+}
+
+// ===== RESOLUTION WRITE HOOKS =====
+
+/**
+ * Propose resolution for a Binary card
+ */
+export function useProposeResolution(cardId: number, actualPrice: string) {
+  const { config } = usePrepareContractWrite({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'proposeResolution',
+    args: [BigInt(cardId), parseEther(actualPrice)],
+    value: parseEther('10'), // Resolution bond (10 TAO)
+  })
+
+  const { data, write, isLoading: isWriting } = useContractWrite(config)
+  
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransaction({
+    hash: data?.hash,
+  })
+
+  return {
+    propose: write,
+    isLoading: isWriting || isConfirming,
+    isSuccess,
+    txHash: data?.hash,
+  }
+}
+
+/**
+ * Propose resolution for a Multi card
+ */
+export function useProposeResolutionMulti(cardId: number, winningOption: number) {
+  const { config } = usePrepareContractWrite({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'proposeResolutionMulti',
+    args: [BigInt(cardId), BigInt(winningOption)],
+    value: parseEther('10'), // Resolution bond (10 TAO)
+  })
+
+  const { data, write, isLoading: isWriting } = useContractWrite(config)
+  
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransaction({
+    hash: data?.hash,
+  })
+
+  return {
+    propose: write,
+    isLoading: isWriting || isConfirming,
+    isSuccess,
+    txHash: data?.hash,
+  }
+}
+
+/**
+ * Dispute a resolution proposal
+ */
+export function useDisputeResolution(cardId: number, bondAmount: bigint) {
+  const { config } = usePrepareContractWrite({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'disputeResolution',
+    args: [BigInt(cardId)],
+    value: bondAmount, // Must match or exceed proposer's bond
+  })
+
+  const { data, write, isLoading: isWriting } = useContractWrite(config)
+  
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransaction({
+    hash: data?.hash,
+  })
+
+  return {
+    dispute: write,
+    isLoading: isWriting || isConfirming,
+    isSuccess,
+    txHash: data?.hash,
+  }
+}
+
+/**
+ * Vote on a disputed resolution
+ */
+export function useVoteOnResolution(cardId: number, supportsProposal: boolean) {
+  const { config } = usePrepareContractWrite({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'voteOnResolution',
+    args: [BigInt(cardId), supportsProposal],
+  })
+
+  const { data, write, isLoading: isWriting } = useContractWrite(config)
+  
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransaction({
+    hash: data?.hash,
+  })
+
+  return {
+    vote: write,
+    isLoading: isWriting || isConfirming,
+    isSuccess,
+    txHash: data?.hash,
+  }
+}
+
+/**
+ * Finalize resolution
+ */
+export function useFinalizeResolution(cardId: number) {
+  const { config } = usePrepareContractWrite({
+    address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: BETTING_ABI,
+    functionName: 'finalizeResolution',
+    args: [BigInt(cardId)],
+  })
+
+  const { data, write, isLoading: isWriting } = useContractWrite(config)
+  
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransaction({
+    hash: data?.hash,
+  })
+
+  return {
+    finalize: write,
+    isLoading: isWriting || isConfirming,
+    isSuccess,
+    txHash: data?.hash,
   }
 }
 

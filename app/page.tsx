@@ -34,7 +34,7 @@ export default function Home() {
   const [subnets, setSubnets] = useState<SubnetData[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedSubnet, setSelectedSubnet] = useState<number | null>(null)
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'resolved'>('active')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'pending' | 'resolved'>('active')
   const [sortBy, setSortBy] = useState<'volume' | 'deadline' | 'newest' | 'oldest'>('volume')
   const [isMounted, setIsMounted] = useState(false)
 
@@ -255,9 +255,50 @@ export default function Home() {
         {/* Betting Cards */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
               <span className="text-lg font-medium text-white">{displayCards.length} markets</span>
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <div className="flex items-center space-x-2 glass rounded-lg p-1">
+                <button
+                  onClick={() => setFilterStatus('all')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    filterStatus === 'all'
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setFilterStatus('active')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    filterStatus === 'active'
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  Active
+                </button>
+                <button
+                  onClick={() => setFilterStatus('pending')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    filterStatus === 'pending'
+                      ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
+                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  Pending
+                </button>
+                <button
+                  onClick={() => setFilterStatus('resolved')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    filterStatus === 'resolved'
+                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
+                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  Resolved
+                </button>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">

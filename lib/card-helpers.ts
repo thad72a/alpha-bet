@@ -36,6 +36,7 @@ export interface EnrichedBettingCard extends Omit<BettingCardData, 'currentAlpha
   priceChange: number // % change
   timeRemaining: number // seconds until deadline
   isActive: boolean // not resolved and deadline not passed
+  isPendingResolution: boolean // past deadline, not resolved, no proposal
   yesPercentage: number // % of total shares
   noPercentage: number // % of total shares
   subnetName: string | null
@@ -64,6 +65,7 @@ export function enrichCard(
   const timestamp = Number(card.timestamp)
   const timeRemaining = Math.max(0, timestamp - now)
   const isActive = !card.resolved && timeRemaining > 0
+  const isPendingResolution = !card.resolved && timeRemaining <= 0
   
   // Calculate share percentages
   const yesPercentage = totalShares > 0 ? (totalYesShares / totalShares) * 100 : 50
@@ -112,6 +114,7 @@ export function enrichCard(
     priceChange,
     timeRemaining,
     isActive,
+    isPendingResolution,
     yesPercentage,
     noPercentage,
     volume,
@@ -198,11 +201,13 @@ export function calculatePayout(
  */
 export function filterCards(
   cards: EnrichedBettingCard[],
-  filter: 'all' | 'active' | 'resolved'
+  filter: 'all' | 'active' | 'pending' | 'resolved'
 ): EnrichedBettingCard[] {
   switch (filter) {
     case 'active':
       return cards.filter((card) => card.isActive)
+    case 'pending':
+      return cards.filter((card) => card.isPendingResolution)
     case 'resolved':
       return cards.filter((card) => card.resolved)
     default:
@@ -239,24 +244,30 @@ export function sortCards(
 export function getCardStatus(card: EnrichedBettingCard): {
   label: string
   color: string
+  bgColor: string
 } {
   if (card.resolved) {
     return {
-      label: card.outcome ? 'Resolved: YES' : 'Resolved: NO',
-      color: card.outcome ? 'text-green-400' : 'text-red-400',
+      label: card.cardType === 'binary' 
+        ? (card.outcome ? 'Resolved: YES' : 'Resolved: NO')
+        : `Resolved: Option ${card.winningOption + 1}`,
+      color: 'text-white',
+      bgColor: card.outcome ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50',
     }
   }
   
-  if (card.timeRemaining <= 0) {
+  if (card.isPendingResolution) {
     return {
-      label: 'Awaiting Resolution',
-      color: 'text-yellow-400',
+      label: 'Pending Resolution',
+      color: 'text-white',
+      bgColor: 'bg-yellow-500/20 border-yellow-500/50',
     }
   }
   
   return {
     label: 'Active',
-    color: 'text-blue-400',
+    color: 'text-white',
+    bgColor: 'bg-green-500/20 border-green-500/50',
   }
 }
 

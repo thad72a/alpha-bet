@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { BettingCardData } from '@/types/subnet'
 import { formatTAO, formatTimestamp } from '@/lib/bittensor'
 import { BettingModal } from '@/components/BettingModal'
+import { getCardStatus } from '@/lib/card-helpers'
 import { 
   Copy, 
   Bookmark, 
@@ -88,6 +89,8 @@ export function BettingCard({ card }: BettingCardProps) {
     return `$${volume}`
   }
 
+  const status = getCardStatus(card)
+
   return (
     <Card 
       className="premium-card transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-white/10 group h-80 flex flex-col cursor-pointer"
@@ -97,7 +100,7 @@ export function BettingCard({ card }: BettingCardProps) {
         <div className="flex items-start justify-between">
           {/* Left side: ID + Question */}
           <div className="flex-1 pr-4">
-            {/* Card ID */}
+            {/* Card ID + Status Badge */}
             <div className="flex items-center space-x-2 mb-3">
               <span className="text-white/60 text-sm font-mono">{cardId}</span>
               <Button 
@@ -108,6 +111,9 @@ export function BettingCard({ card }: BettingCardProps) {
               >
                 <Copy className="w-3 h-3" />
               </Button>
+              <span className={`px-2 py-0.5 rounded text-xs font-medium border ${status.bgColor} ${status.color}`}>
+                {status.label}
+              </span>
             </div>
             {/* Question */}
             <div className="text-white font-medium text-sm leading-tight">
