@@ -34,13 +34,25 @@ export default function Home() {
   const [subnets, setSubnets] = useState<SubnetData[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedSubnet, setSelectedSubnet] = useState<number | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState<'trending' | 'breaking' | 'new'>('trending')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'pending' | 'resolved'>('active')
   const [sortBy, setSortBy] = useState<'volume' | 'deadline' | 'newest' | 'oldest'>('volume')
   const [isMounted, setIsMounted] = useState(false)
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false)
+  const [bookmarks, setBookmarks] = useState<Set<number>>(new Set())
 
   // Fix hydration errors - only render wallet-dependent content after mounting
   useEffect(() => {
     setIsMounted(true)
+    // Load bookmarks from localStorage
+    const saved = localStorage.getItem('bookmarked_cards')
+    if (saved) {
+      try {
+        setBookmarks(new Set(JSON.parse(saved)))
+      } catch (e) {
+        console.error('Error loading bookmarks:', e)
+      }
+    }
   }, [])
   
   // Fetch real data from blockchain and Bittensor network
@@ -57,11 +69,55 @@ export default function Home() {
     })
   }, [blockchainCards, summaries])
 
+  // Toggle bookmark function
+  const toggleBookmark = (cardId: number) => {
+    const newBookmarks = new Set(bookmarks)
+    if (newBookmarks.has(cardId)) {
+      newBookmarks.delete(cardId)
+    } else {
+      newBookmarks.add(cardId)
+    }
+    setBookmarks(newBookmarks)
+    localStorage.setItem('bookmarked_cards', JSON.stringify(Array.from(newBookmarks)))
+  }
+
   // Apply filters and sorting
   const displayCards = useMemo(() => {
-    const filtered = filterCards(enrichedCards, filterStatus)
-    return sortCards(filtered, sortBy)
-  }, [enrichedCards, filterStatus, sortBy])
+    let filtered = filterCards(enrichedCards, filterStatus)
+    
+    // Apply subnet filter if selected
+    if (selectedSubnet !== null) {
+      filtered = filtered.filter(card => card.netuid === selectedSubnet)
+    } else {
+      // Apply category filter
+      const now = Date.now() / 1000
+      switch (categoryFilter) {
+        case 'breaking':
+          // Cards close to deadline (<24h) or recently resolved
+          filtered = filtered.filter(card => 
+            (card.timeRemaining < 86400 && card.timeRemaining > 0) || 
+            (card.resolved && (now - card.creationTime) < 86400)
+          )
+          break
+        case 'new':
+          // Recently created (<7 days)
+          filtered = filtered.filter(card => (now - card.creationTime) < 604800)
+          break
+        case 'trending':
+        default:
+          // Keep all (sorted by volume by default)
+          break
+      }
+    }
+    
+    const sorted = sortCards(filtered, sortBy)
+    // Sort bookmarked cards first
+    return sorted.sort((a, b) => {
+      if (bookmarks.has(a.id) && !bookmarks.has(b.id)) return -1
+      if (!bookmarks.has(a.id) && bookmarks.has(b.id)) return 1
+      return 0
+    })
+  }, [enrichedCards, filterStatus, sortBy, bookmarks, selectedSubnet, categoryFilter])
 
   const loading = cardsLoading
 
@@ -89,7 +145,7 @@ export default function Home() {
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-6"></div>
-          <p className="text-xl text-white/80">Loading AlphaBet...</p>
+          <p className="text-xl text-white/80">Loading PriceMarkets...</p>
         </div>
       </div>
     )
@@ -107,10 +163,10 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-white to-gray-200 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-black font-bold text-xl">α</span>
+                  <span className="text-black font-bold text-xl">$</span>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold gradient-text tracking-tight">AlphaBet</h1>
+                  <h1 className="text-3xl font-bold gradient-text tracking-tight">PriceMarkets</h1>
                   <span className="text-sm text-white/70 font-medium">Bittensor Subnet Price Predictions</span>
                 </div>
               </div>
@@ -129,11 +185,15 @@ export default function Home() {
       {/* Subnet Navigation Tabs */}
       <div className="relative z-10 glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-1 overflow-x-auto py-4">
+          <div className="flex items-center space-x-1 py-4">
+            {/* Category filters */}
             <button
-              onClick={() => setSelectedSubnet(null)}
+              onClick={() => {
+                setCategoryFilter('trending')
+                setSelectedSubnet(null)
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                selectedSubnet === null 
+                categoryFilter === 'trending' && selectedSubnet === null
                   ? 'status-active' 
                   : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
@@ -142,9 +202,12 @@ export default function Home() {
               Trending
             </button>
             <button
-              onClick={() => setSelectedSubnet(null)}
+              onClick={() => {
+                setCategoryFilter('breaking')
+                setSelectedSubnet(null)
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                selectedSubnet === null 
+                categoryFilter === 'breaking' && selectedSubnet === null
                   ? 'status-active' 
                   : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
@@ -152,16 +215,21 @@ export default function Home() {
               Breaking
             </button>
             <button
-              onClick={() => setSelectedSubnet(null)}
+              onClick={() => {
+                setCategoryFilter('new')
+                setSelectedSubnet(null)
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                selectedSubnet === null 
+                categoryFilter === 'new' && selectedSubnet === null
                   ? 'status-active' 
                   : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
             >
               New
             </button>
-            {subnets.map((subnet) => (
+            
+            {/* Show first 3 subnets */}
+            {subnets.slice(0, 3).map((subnet) => (
               <button
                 key={subnet.netuid}
                 onClick={() => setSelectedSubnet(subnet.netuid)}
@@ -174,10 +242,43 @@ export default function Home() {
                 Subnet {subnet.netuid}
               </button>
             ))}
-            <button className="px-4 py-2 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 whitespace-nowrap">
-              More
-              <ArrowUpRight className="w-3 h-3 inline ml-1 rotate-90" />
-            </button>
+            
+            {/* More dropdown */}
+            {subnets.length > 3 && (
+              <div className="relative">
+                <button 
+                  onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 whitespace-nowrap"
+                >
+                  More
+                  <ArrowUpRight className={`w-3 h-3 inline ml-1 transition-transform ${showMoreDropdown ? 'rotate-180' : 'rotate-90'}`} />
+                </button>
+                
+                {showMoreDropdown && (
+                  <div className="absolute top-full left-0 mt-2 w-96 glass border border-white/20 rounded-lg shadow-xl p-4 z-50">
+                    <div className="grid grid-cols-3 gap-2">
+                      {subnets.slice(3).map((subnet) => (
+                        <button
+                          key={subnet.netuid}
+                          onClick={() => {
+                            setSelectedSubnet(subnet.netuid)
+                            setShowMoreDropdown(false)
+                          }}
+                          className={`p-3 rounded-lg text-sm font-medium text-center transition-all ${
+                            selectedSubnet === subnet.netuid
+                              ? 'bg-white/20 text-white border border-white/40'
+                              : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <div className="font-bold">Subnet {subnet.netuid}</div>
+                          <div className="text-xs opacity-60">{subnet.name}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -352,7 +453,12 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayCards.map((card, index) => (
                 <div key={card.id} className="animate-fade-in" style={{animationDelay: `${index * 0.1}s`}}>
-                  <BettingCard card={card} onBet={() => {}} />
+                  <BettingCard 
+                    card={card} 
+                    onBet={() => {}} 
+                    isBookmarked={bookmarks.has(card.id)}
+                    onToggleBookmark={() => toggleBookmark(card.id)}
+                  />
                 </div>
               ))}
             </div>

@@ -57,6 +57,16 @@ export function BettingModal({
     : 50
   const currentNoProb = 100 - currentYesProb
 
+  // Format betted amounts for display
+  const formatBettedAmount = (amount: number) => {
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`
+    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`
+    return amount.toFixed(1)
+  }
+
+  const yesBettedAmount = Number(formatEther(currentYesShares))
+  const noBettedAmount = Number(formatEther(currentNoShares))
+
   // Calculate new probabilities after user's bet
   const amountWei = useMemo(() => {
     try {
@@ -85,12 +95,15 @@ export function BettingModal({
   const userShares = amountWei
   const sharesOnUserSide = selectedOutcome === 'yes' ? newYesShares : newNoShares
 
-  const potentialPayout = sharesOnUserSide > 0n && totalPool > 0n
+  const potentialPayoutWei = sharesOnUserSide > 0n && totalPool > 0n
     ? (Number(userShares) / Number(sharesOnUserSide)) * Number(totalPool + amountWei)
     : 0
 
-  const profit = potentialPayout - Number(formatEther(amountWei))
-  const roiPercentage = amountWei > 0n ? (profit / Number(formatEther(amountWei))) * 100 : 0
+  // Convert to TAO for display
+  const potentialPayout = potentialPayoutWei > 0 ? Number(formatEther(BigInt(Math.floor(potentialPayoutWei)))) : 0
+  const amountInTAO = Number(formatEther(amountWei))
+  const profit = potentialPayout - amountInTAO
+  const roiPercentage = amountInTAO > 0 ? (profit / amountInTAO) * 100 : 0
 
   // Prepare contract write
   const yesShares = selectedOutcome === 'yes' ? amountWei : 0n
@@ -228,7 +241,7 @@ export function BettingModal({
               >
                 <div>Yes</div>
                 <div className="text-xs font-normal mt-1 opacity-80">
-                  {currentYesProb.toFixed(1)}%
+                  {formatBettedAmount(yesBettedAmount)} TAO
                 </div>
               </button>
               <button
@@ -241,7 +254,7 @@ export function BettingModal({
               >
                 <div>No</div>
                 <div className="text-xs font-normal mt-1 opacity-80">
-                  {currentNoProb.toFixed(1)}%
+                  {formatBettedAmount(noBettedAmount)} TAO
                 </div>
               </button>
             </div>
@@ -315,11 +328,11 @@ export function BettingModal({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/60">New Probability</span>
+                  <span className="text-white/60">Total on {selectedOutcome === 'yes' ? 'Yes' : 'No'} (after bet)</span>
                   <span className="text-white font-medium">
-                    {selectedOutcome === 'yes' ? newYesProb.toFixed(1) : newNoProb.toFixed(1)}%
-                    <span className={`ml-1 text-xs ${probChange > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                      ({probChange > 0 ? '+' : ''}{probChange.toFixed(1)}%)
+                    {formatBettedAmount(selectedOutcome === 'yes' ? yesBettedAmount + amountInTAO : noBettedAmount + amountInTAO)} TAO
+                    <span className="ml-1 text-xs text-green-400">
+                      (+{formatBettedAmount(amountInTAO)} TAO)
                     </span>
                   </span>
                 </div>

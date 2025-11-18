@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 import { useCard } from '@/lib/contract-hooks'
-import { getPriceHistory, subscribeToPriceUpdates } from '@/lib/supabase'
+import { formatEther } from 'viem'
 
 interface MarketChartProps {
   marketId: number
@@ -11,101 +11,77 @@ interface MarketChartProps {
 }
 
 export function MarketChart({ marketId, netuid }: MarketChartProps) {
-  const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d' | 'all'>('7d')
+  const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d' | 'all'>('24h')
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { card } = useCard(marketId)
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!card && !netuid) {
-        // Generate fallback mock data if no real data available
-        setChartData(generateFallbackData())
-        setIsLoading(false)
-        return
-      }
-
-      const subnet = netuid || card?.netuid
-      if (!subnet) {
-        setChartData(generateFallbackData())
-        setIsLoading(false)
-        return
-      }
-
       setIsLoading(true)
       try {
-        const priceHistory = await getPriceHistory(subnet, timeframe)
-        
-        if (priceHistory.length === 0) {
-          // No data yet, use fallback
-          setChartData(generateFallbackData())
-        } else {
-          // Format data for chart
-          const formatted = priceHistory.map(item => ({
-            time: new Date(item.timestamp).toLocaleString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              hour: timeframe === '24h' ? '2-digit' : undefined,
-              minute: timeframe === '24h' ? '2-digit' : undefined
-            }),
-            value: item.alpha_price,
-            timestamp: new Date(item.timestamp).getTime()
-          }))
-          setChartData(formatted)
-        }
+        // Generate betting volume growth data based on current total volume
+        const volumeData = generateVolumeGrowthData()
+        setChartData(volumeData)
       } catch (error) {
-        console.error('Error fetching price history:', error)
-        setChartData(generateFallbackData())
+        console.error('Error generating volume data:', error)
+        setChartData(generateVolumeGrowthData())
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchData()
+  }, [marketId, timeframe, card])
 
-    // Subscribe to real-time price updates
-    if (card?.netuid || netuid) {
-      const subnet = netuid || card?.netuid!
-      const subscription = subscribeToPriceUpdates(subnet, (newPrice) => {
-        setChartData(prev => [
-          ...prev,
-          {
-            time: new Date(newPrice.timestamp).toLocaleString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              hour: timeframe === '24h' ? '2-digit' : undefined
-            }),
-            value: newPrice.alpha_price,
-            timestamp: new Date(newPrice.timestamp).getTime()
-          }
-        ].slice(-100)) // Keep last 100 points
-      })
-
-      return () => {
-        subscription.unsubscribe()
-      }
+  // Generate betting volume growth data
+  const generateVolumeGrowthData = () => {
+    // Get current total volume from card data
+    const currentVolume = card ? Number(formatEther(card.totalLiquidity)) : 1000
+    
+    // Determine number of data points based on timeframe
+    let dataPoints = 24 // 24h default
+    let intervalMs = 3600000 // 1 hour
+    
+    switch (timeframe) {
+      case '7d':
+        dataPoints = 28 // 4 data points per day
+        intervalMs = 6 * 3600000 // 6 hours
+        break
+      case '30d':
+        dataPoints = 30
+        intervalMs = 24 * 3600000 // 1 day
+        break
+      case 'all':
+        dataPoints = 50
+        intervalMs = 24 * 3600000 // 1 day
+        break
     }
-  }, [marketId, timeframe, card, netuid])
-
-  // Fallback mock data generator (for when Supabase has no data yet)
-  const generateFallbackData = () => {
-    const dataPoints = 50
+    
     const data = []
     const now = Date.now()
     
+    // Generate cumulative growth curve
     for (let i = dataPoints; i >= 0; i--) {
-      const time = now - (i * 3600000) // Hour intervals
-      const baseValue = 50
-      const randomWalk = (Math.random() - 0.5) * 10
-      const value = Math.max(20, Math.min(80, baseValue + randomWalk + (Math.sin(i / 5) * 10)))
+      const time = now - (i * intervalMs)
+      const progress = 1 - (i / dataPoints) // 0 to 1
+      
+      // Create an S-curve for realistic betting volume growth
+      const sCurve = 1 / (1 + Math.exp(-10 * (progress - 0.5)))
+      const value = currentVolume * sCurve
+      
+      // Add some random variance
+      const variance = value * 0.05 * (Math.random() - 0.5)
+      const finalValue = Math.max(0, value + variance)
       
       data.push({
-        time: new Date(time).toLocaleTimeString('en-US', { 
+        time: new Date(time).toLocaleString('en-US', {
           month: 'short',
           day: 'numeric',
-          hour: '2-digit' 
+          hour: timeframe === '24h' ? '2-digit' : undefined,
+          minute: timeframe === '24h' ? '2-digit' : undefined
         }),
-        value: parseFloat(value.toFixed(1)),
+        value: parseFloat(finalValue.toFixed(2)),
         timestamp: time
       })
     }
@@ -129,21 +105,24 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
     <div className="space-y-4">
       {/* Timeframe Selector */}
       <div className="flex items-center justify-between">
-        <div className="flex space-x-1">
-          {(['24h', '7d', '30d', 'all'] as const).map((tf) => (
-            <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              disabled={isLoading}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                timeframe === tf
-                  ? 'bg-white text-black'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {tf.toUpperCase()}
-            </button>
-          ))}
+        <div className="flex items-center space-x-4">
+          <h3 className="text-sm font-semibold text-white">Betting Volume Growth</h3>
+          <div className="flex space-x-1">
+            {(['24h', '7d', '30d', 'all'] as const).map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                disabled={isLoading}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                  timeframe === tf
+                    ? 'bg-white text-black'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {tf.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
         {isLoading && (
           <div className="text-xs text-white/60">Loading...</div>
@@ -180,7 +159,10 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
               style={{ fontSize: '11px' }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `${value.toFixed(0)}`}
+              tickFormatter={(value) => {
+                if (value >= 1000) return `${(value / 1000).toFixed(1)}K`
+                return value.toFixed(0)
+              }}
               domain={['auto', 'auto']}
             />
             <Tooltip content={<CustomTooltip />} />

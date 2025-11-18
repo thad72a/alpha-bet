@@ -258,15 +258,15 @@ export function MultiOptionBettingModal({
                 >
                   <div className="flex items-center justify-between">
                     <div className="font-semibold">{option}</div>
-                    <div className="text-sm">
-                      {currentProbabilities[index].toFixed(1)}%
+                    <div className="text-right">
+                      <div className="text-base font-bold">
+                        {formatEther(optionStakes[index])} TAO
+                      </div>
+                      <div className="text-xs opacity-60">
+                        {currentProbabilities[index].toFixed(1)}% of total
+                      </div>
                     </div>
                   </div>
-                  {optionStakes[index] > 0n && (
-                    <div className="text-xs mt-1 opacity-80">
-                      {formatEther(optionStakes[index])} TAO staked
-                    </div>
-                  )}
                 </button>
               ))}
             </div>

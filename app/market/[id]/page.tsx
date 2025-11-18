@@ -46,7 +46,9 @@ export default function MarketDetail() {
   // Local state
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [showRules, setShowRules] = useState(false)
+  const [showMarketContext, setShowMarketContext] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
+  const [commentSort, setCommentSort] = useState<'newest' | 'top'>('newest')
   const [newComment, setNewComment] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [marketContextData, setMarketContextData] = useState<ReturnType<typeof generateMarketContext> | null>(null)
@@ -64,6 +66,18 @@ export default function MarketDetail() {
       setMarketContextData(context)
     }
   }, [card, subnetData])
+
+  // Sort comments based on selected sort mode
+  const sortedComments = useMemo(() => {
+    const sorted = [...comments]
+    if (commentSort === 'newest') {
+      return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    } else {
+      // 'top' - would need user stake data to sort properly
+      // For now, just reverse sort by created_at as placeholder
+      return sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    }
+  }, [comments, commentSort])
 
   // Fetch comments from Supabase
   useEffect(() => {
@@ -186,8 +200,18 @@ export default function MarketDetail() {
     )
   }
 
-  const yesProbability = ((market.totalYesShares / (market.totalYesShares + market.totalNoShares)) * 100).toFixed(0)
-  const noProbability = ((market.totalNoShares / (market.totalYesShares + market.totalNoShares)) * 100).toFixed(0)
+  // Calculate betted amounts instead of probabilities
+  const yesBettedAmount = card ? Number(formatEther(card.totalYesShares)) : 0
+  const noBettedAmount = card ? Number(formatEther(card.totalNoShares)) : 0
+  const totalBetted = yesBettedAmount + noBettedAmount
+  const yesPercentage = totalBetted > 0 ? ((yesBettedAmount / totalBetted) * 100).toFixed(0) : '50'
+  const noPercentage = totalBetted > 0 ? ((noBettedAmount / totalBetted) * 100).toFixed(0) : '50'
+  
+  const formatBettedAmount = (amount: number) => {
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`
+    if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`
+    return amount.toFixed(2)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
@@ -209,10 +233,10 @@ export default function MarketDetail() {
               </Button>
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-white to-gray-200 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-black font-bold text-xl">α</span>
+                  <span className="text-black font-bold text-xl">$</span>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold gradient-text tracking-tight">AlphaBet</h1>
+                  <h1 className="text-2xl font-bold gradient-text tracking-tight">PriceMarkets</h1>
                 </div>
               </div>
             </div>
@@ -275,36 +299,36 @@ export default function MarketDetail() {
                   </div>
                 </div>
 
-                {/* Outcome Display */}
+                {/* Outcome Display - Betted Amounts */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="glass rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-white/80 font-medium">Yes</span>
-                      <span className="text-2xl font-bold text-white">{yesProbability}%</span>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-white">{formatBettedAmount(yesBettedAmount)} TAO</div>
+                        <div className="text-xs text-white/60">{yesPercentage}% of total</div>
+                      </div>
                     </div>
                     <div className="w-full bg-white/10 rounded-full h-2">
                       <div 
                         className="bg-white rounded-full h-2 transition-all duration-300"
-                        style={{ width: `${yesProbability}%` }}
+                        style={{ width: `${yesPercentage}%` }}
                       ></div>
-                    </div>
-                    <div className="mt-2 text-sm text-white/60">
-                      ${((market.totalYesShares / 1000) * 3.5).toFixed(0)}¢
                     </div>
                   </div>
                   <div className="glass rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-white/80 font-medium">No</span>
-                      <span className="text-2xl font-bold text-white">{noProbability}%</span>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-white">{formatBettedAmount(noBettedAmount)} TAO</div>
+                        <div className="text-xs text-white/60">{noPercentage}% of total</div>
+                      </div>
                     </div>
                     <div className="w-full bg-white/10 rounded-full h-2">
                       <div 
                         className="bg-white/60 rounded-full h-2 transition-all duration-300"
-                        style={{ width: `${noProbability}%` }}
+                        style={{ width: `${noPercentage}%` }}
                       ></div>
-                    </div>
-                    <div className="mt-2 text-sm text-white/60">
-                      ${((market.totalNoShares / 1000) * 3.5).toFixed(0)}¢
                     </div>
                   </div>
                 </div>
@@ -320,14 +344,12 @@ export default function MarketDetail() {
             {/* Market Context */}
             <Card className="premium-card">
               <CardHeader>
-                <div className="flex items-center justify-between cursor-pointer" onClick={() => setShowRules(!showRules)}>
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => setShowMarketContext(!showMarketContext)}>
                   <h3 className="text-lg font-semibold text-white">Market Context</h3>
-                  <Button variant="ghost" size="sm" className="text-white/60">
-                    Generate
-                  </Button>
+                  <ChevronDown className={`w-5 h-5 text-white/60 transition-transform ${showMarketContext ? 'rotate-180' : ''}`} />
                 </div>
               </CardHeader>
-              {marketContextData?.description && (
+              {showMarketContext && marketContextData?.description && (
                 <CardContent className="pt-0">
                   <div className="text-white/80 leading-relaxed whitespace-pre-line">
                     {marketContextData.description}
@@ -361,9 +383,13 @@ export default function MarketDetail() {
                     Comments ({comments.length})
                   </h3>
                   <div className="flex items-center space-x-2">
-                    <select className="bg-black/40 border border-white/20 rounded-lg px-3 py-1 text-white text-sm focus:border-white/40 focus:outline-none">
-                      <option>Newest</option>
-                      <option>Top Holders</option>
+                    <select 
+                      value={commentSort}
+                      onChange={(e) => setCommentSort(e.target.value as 'newest' | 'top')}
+                      className="bg-black/40 border border-white/20 rounded-lg px-3 py-1 text-white text-sm focus:border-white/40 focus:outline-none"
+                    >
+                      <option value="newest">Newest</option>
+                      <option value="top">Top Betters</option>
                     </select>
                   </div>
                 </div>
@@ -416,9 +442,9 @@ export default function MarketDetail() {
                 )}
                 
                 {/* Comments List */}
-                {comments.length > 0 ? (
+                {sortedComments.length > 0 ? (
                   <div className="space-y-3">
-                    {comments.map((comment) => {
+                    {sortedComments.map((comment) => {
                       const commentDate = new Date(comment.created_at)
                       const now = new Date()
                       const diffMs = now.getTime() - commentDate.getTime()

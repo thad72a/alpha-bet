@@ -24,11 +24,12 @@ interface BettingCardProps {
   card: BettingCardData | EnrichedBettingCard
   onBet: (cardId: number, isYes: boolean, shares: number) => void
   userShares?: { yesShares: number; noShares: number }
+  isBookmarked?: boolean
+  onToggleBookmark?: () => void
 }
 
-export function BettingCard({ card }: BettingCardProps) {
+export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: BettingCardProps) {
   const router = useRouter()
-  const [isBookmarked, setIsBookmarked] = useState(false)
   const [showBettingModal, setShowBettingModal] = useState(false)
   const [initialOutcome, setInitialOutcome] = useState<'yes' | 'no'>('yes')
   const [subnetName, setSubnetName] = useState<string | null>(null)
@@ -53,10 +54,17 @@ export function BettingCard({ card }: BettingCardProps) {
   const isExpired = Date.now() / 1000 > card.timestamp
   const canBet = !card.resolved && !isExpired
 
-  // Calculate implied probabilities
-  const totalLiquidity = card.totalYesShares + card.totalNoShares
-  const yesProbability = totalLiquidity > 0 ? (card.totalYesShares / totalLiquidity) * 100 : 50
-  const noProbability = 100 - yesProbability
+  // Calculate betted amounts
+  const yesBettedAmount = card.totalYesShares
+  const noBettedAmount = card.totalNoShares
+  const totalBetted = yesBettedAmount + noBettedAmount
+  const yesPercentage = totalBetted > 0 ? (yesBettedAmount / totalBetted) * 100 : 50
+  
+  const formatBettedAmount = (amount: number) => {
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`
+    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`
+    return amount.toFixed(0)
+  }
 
   useEffect(() => {
     if (subnetInfo) {
@@ -82,11 +90,11 @@ export function BettingCard({ card }: BettingCardProps) {
 
   const formatVolume = (volume: number) => {
     if (volume >= 1000000) {
-      return `$${(volume / 1000000).toFixed(1)}M`
+      return `${(volume / 1000000).toFixed(1)}M TAO`
     } else if (volume >= 1000) {
-      return `$${(volume / 1000).toFixed(1)}K`
+      return `${(volume / 1000).toFixed(1)}K TAO`
     }
-    return `$${volume}`
+    return `${volume.toFixed(2)} TAO`
   }
 
   // Check if card is enriched, otherwise create minimal status
@@ -136,31 +144,17 @@ export function BettingCard({ card }: BettingCardProps) {
             </div>
           </div>
           
-          {/* Right side: Probability gauge */}
-          <div className="flex flex-col items-center">
-            <div className="relative w-12 h-12 mb-1">
-              <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  className="text-white/20"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path
-                  className="text-white"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  fill="none"
-                  strokeDasharray={`${yesProbability}, 100`}
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-              </svg>
+          {/* Right side: Betted amounts */}
+          <div className="flex flex-col items-end min-w-[100px]">
+            <div className="glass rounded-lg p-2 mb-1 w-full">
+              <div className="text-xs text-white/60 mb-0.5">YES</div>
+              <div className="text-white font-bold text-sm">{formatBettedAmount(yesBettedAmount)} TAO</div>
+              <div className="text-xs text-white/50">{yesPercentage.toFixed(0)}%</div>
             </div>
-            <div className="text-center">
-              <div className="text-white font-bold text-lg">{yesProbability.toFixed(0)}%</div>
-              <div className="text-white/60 text-xs">chance</div>
+            <div className="glass rounded-lg p-2 w-full">
+              <div className="text-xs text-white/60 mb-0.5">NO</div>
+              <div className="text-white font-bold text-sm">{formatBettedAmount(noBettedAmount)} TAO</div>
+              <div className="text-xs text-white/50">{(100 - yesPercentage).toFixed(0)}%</div>
             </div>
           </div>
         </div>
@@ -199,7 +193,7 @@ export function BettingCard({ card }: BettingCardProps) {
             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
             <span className="text-white/60 text-sm">LIVE</span>
             <span className="text-white/60 text-sm">•</span>
-            <span className="text-white/60 text-sm">{formatVolume(card.volume)} Vol.</span>
+            <span className="text-white/60 text-sm">{formatVolume(card.volume)} Betted</span>
           </div>
           <div className="flex items-center space-x-3" onClick={handleButtonClick}>
             <Button 
@@ -219,10 +213,10 @@ export function BettingCard({ card }: BettingCardProps) {
               className="p-2 text-white/40 hover:text-white/80"
               onClick={(e) => {
                 e.stopPropagation()
-                setIsBookmarked(!isBookmarked)
+                onToggleBookmark?.()
               }}
             >
-              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current text-white/80' : ''}`} />
+              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current text-yellow-400' : ''}`} />
             </Button>
           </div>
         </div>

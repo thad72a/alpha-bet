@@ -28901,3 +28901,151 @@ ReferenceError: Headers is not defined
 [dotenv@17.2.3] injecting env (6) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
 ❌ Error: Supabase credentials not found in environment variables
    Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  override existing env vars with { override: true }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
