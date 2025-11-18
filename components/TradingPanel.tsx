@@ -9,7 +9,7 @@ import { useAccount, useContractWrite, usePrepareContractWrite, useWaitForTransa
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { showErrorToast, showSuccessToast, showLoadingToast, dismissToast } from '@/lib/errorHandling'
 import { BETTING_CONTRACT_ADDRESS, BETTING_ABI } from '@/lib/contracts'
-import { addBetHistory } from '@/lib/supabase'
+import { addBetHistory, recordVolumeSnapshot } from '@/lib/supabase'
 import { AlertCircle, TrendingUp, Info } from 'lucide-react'
 
 interface TradingPanelProps {
@@ -59,8 +59,8 @@ export function TradingPanel({ market }: TradingPanelProps) {
   // Format betted amounts for display
   const formatBettedAmount = (amount: number) => {
     if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`
-    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`
-    return amount.toFixed(1)
+    if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`
+    return amount.toFixed(4)
   }
 
   const yesBettedAmount = Number(formatEther(currentYesSharesWei))
@@ -131,11 +131,27 @@ export function TradingPanel({ market }: TradingPanelProps) {
       
       // Save to Supabase
       if (address && txData?.hash) {
+        // Record individual bet
         addBetHistory(
           market.id,
           address,
           selectedOutcome,
           amount,
+          txData.hash
+        )
+
+        // Record volume snapshot with new cumulative totals
+        const newYesVolume = selectedOutcome === 'yes' 
+          ? yesBettedAmount + Number(amount)
+          : yesBettedAmount
+        const newNoVolume = selectedOutcome === 'no'
+          ? noBettedAmount + Number(amount)
+          : noBettedAmount
+
+        recordVolumeSnapshot(
+          market.id,
+          newYesVolume.toString(),
+          newNoVolume.toString(),
           txData.hash
         )
       }
@@ -146,7 +162,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
       // Refresh page to show updated stats
       window.location.reload()
     }
-  }, [isConfirmed, loadingToastId, selectedOutcome, amount, address, txData, market.id])
+  }, [isConfirmed, loadingToastId, selectedOutcome, amount, address, txData, market.id, yesBettedAmount, noBettedAmount])
 
   // Handle write errors
   useEffect(() => {

@@ -210,7 +210,7 @@ export default function MarketDetail() {
   const formatBettedAmount = (amount: number) => {
     if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`
     if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`
-    return amount.toFixed(2)
+    return amount.toFixed(4)
   }
 
   return (

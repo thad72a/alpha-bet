@@ -61,9 +61,9 @@ export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: Be
   const yesPercentage = totalBetted > 0 ? (yesBettedAmount / totalBetted) * 100 : 50
   
   const formatBettedAmount = (amount: number) => {
-    if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`
-    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`
-    return amount.toFixed(0)
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`
+    if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`
+    return amount.toFixed(4)
   }
 
   useEffect(() => {
@@ -90,11 +90,11 @@ export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: Be
 
   const formatVolume = (volume: number) => {
     if (volume >= 1000000) {
-      return `${(volume / 1000000).toFixed(1)}M TAO`
+      return `${(volume / 1000000).toFixed(2)}M TAO`
     } else if (volume >= 1000) {
-      return `${(volume / 1000).toFixed(1)}K TAO`
+      return `${(volume / 1000).toFixed(2)}K TAO`
     }
-    return `${volume.toFixed(2)} TAO`
+    return `${volume.toFixed(4)} TAO`
   }
 
   // Check if card is enriched, otherwise create minimal status
@@ -139,22 +139,61 @@ export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: Be
             <div className="text-white/60 text-xs mt-2">
               {subnetName ? `${subnetName} (NetUID ${card.netuid})` : `Subnet ${card.netuid}`}
               {typeof subnetPrice === 'number' && (
-                <span className="ml-2">• Price: {subnetPrice} TAO</span>
+                <span className="ml-2">• Price: {subnetPrice.toFixed(4)} TAO</span>
               )}
             </div>
           </div>
           
-          {/* Right side: Betted amounts */}
-          <div className="flex flex-col items-end min-w-[100px]">
-            <div className="glass rounded-lg p-2 mb-1 w-full">
-              <div className="text-xs text-white/60 mb-0.5">YES</div>
-              <div className="text-white font-bold text-sm">{formatBettedAmount(yesBettedAmount)} TAO</div>
-              <div className="text-xs text-white/50">{yesPercentage.toFixed(0)}%</div>
+          {/* Right side: Betted amounts - Compact circular display */}
+          <div className="flex flex-col items-center">
+            <div className="relative w-16 h-16">
+              {/* Circular progress ring */}
+              <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                {/* Background circle */}
+                <circle
+                  className="text-white/10"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                  fill="none"
+                  cx="18"
+                  cy="18"
+                  r="15.5"
+                />
+                {/* YES progress (green) */}
+                <circle
+                  className="text-green-500"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  fill="none"
+                  cx="18"
+                  cy="18"
+                  r="15.5"
+                  strokeDasharray={`${yesPercentage}, 100`}
+                />
+              </svg>
+              {/* Center percentage */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="text-white font-bold text-base leading-none">{yesPercentage.toFixed(0)}%</div>
+                <div className="text-white/40 text-[9px] mt-0.5">YES</div>
+              </div>
             </div>
-            <div className="glass rounded-lg p-2 w-full">
-              <div className="text-xs text-white/60 mb-0.5">NO</div>
-              <div className="text-white font-bold text-sm">{formatBettedAmount(noBettedAmount)} TAO</div>
-              <div className="text-xs text-white/50">{(100 - yesPercentage).toFixed(0)}%</div>
+            {/* Visual bar showing YES/NO split */}
+            <div className="mt-2 w-16">
+              <div className="flex h-1.5 rounded-full overflow-hidden bg-white/10">
+                <div 
+                  className="bg-green-500 transition-all duration-300"
+                  style={{ width: `${yesPercentage}%` }}
+                />
+                <div 
+                  className="bg-red-500 transition-all duration-300"
+                  style={{ width: `${100 - yesPercentage}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1 text-[9px] text-white/40">
+                <span>YES</span>
+                <span>NO</span>
+              </div>
             </div>
           </div>
         </div>

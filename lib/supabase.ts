@@ -55,6 +55,15 @@ export interface UserBetHistory {
   tx_hash: string
 }
 
+export interface CardVolumeSnapshot {
+  id: string
+  card_id: number
+  yes_volume: string // Cumulative YES volume in TAO
+  no_volume: string // Cumulative NO volume in TAO
+  timestamp: string
+  tx_hash: string
+}
+
 // Comment Functions
 export async function getComments(cardId: number): Promise<Comment[]> {
   const { data, error } = await supabase
@@ -236,12 +245,21 @@ export async function getUserBetHistory(
   userAddress: string,
   cardId?: number
 ): Promise<UserBetHistory[]> {
+  if (!isSupabaseConfigured) {
+    return []
+  }
+
   let query = supabase
     .from('user_bet_history')
     .select('*')
-    .eq('user_address', userAddress)
     .order('timestamp', { ascending: false })
 
+  // If userAddress is provided, filter by it
+  if (userAddress) {
+    query = query.eq('user_address', userAddress)
+  }
+
+  // If cardId is provided, filter by it
   if (cardId) {
     query = query.eq('card_id', cardId)
   }
@@ -250,6 +268,82 @@ export async function getUserBetHistory(
 
   if (error) {
     console.error('Error fetching bet history:', error)
+    return []
+  }
+
+  return data || []
+}
+
+// Card Volume Snapshot Functions
+export async function recordVolumeSnapshot(
+  cardId: number,
+  yesVolume: string,
+  noVolume: string,
+  txHash: string
+): Promise<boolean> {
+  if (!isSupabaseConfigured) {
+    console.warn('Supabase not configured, skipping volume snapshot')
+    return false
+  }
+
+  const { error } = await supabase
+    .from('card_volume_snapshots')
+    .insert({
+      card_id: cardId,
+      yes_volume: yesVolume,
+      no_volume: noVolume,
+      tx_hash: txHash,
+      timestamp: new Date().toISOString()
+    })
+
+  if (error) {
+    console.error('Error recording volume snapshot:', error)
+    return false
+  }
+
+  return true
+}
+
+export async function getVolumeHistory(
+  cardId: number,
+  timeRange: '24h' | '7d' | '30d' | 'all' = '24h'
+): Promise<CardVolumeSnapshot[]> {
+  if (!isSupabaseConfigured) {
+    return []
+  }
+
+  let query = supabase
+    .from('card_volume_snapshots')
+    .select('*')
+    .eq('card_id', cardId)
+    .order('timestamp', { ascending: true })
+
+  // Filter by time range
+  if (timeRange !== 'all') {
+    const now = new Date()
+    let startTime: Date
+
+    switch (timeRange) {
+      case '24h':
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+        break
+      case '7d':
+        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        break
+      case '30d':
+        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        break
+      default:
+        startTime = new Date(0)
+    }
+
+    query = query.gte('timestamp', startTime.toISOString())
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Error fetching volume history:', error)
     return []
   }
 

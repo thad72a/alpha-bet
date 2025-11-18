@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 import { useCard } from '@/lib/contract-hooks'
 import { formatEther } from 'viem'
+import { getVolumeHistory, CardVolumeSnapshot } from '@/lib/supabase'
 
 interface MarketChartProps {
   marketId: number
@@ -20,11 +21,30 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        // Generate betting volume growth data based on current total volume
-        const volumeData = generateVolumeGrowthData()
-        setChartData(volumeData)
+        // Try to fetch real bet history data from Supabase
+        const volumeHistory = await getVolumeHistory(marketId, timeframe)
+        
+        if (volumeHistory.length > 0) {
+          // Use real data
+          const formattedData = volumeHistory.map(snapshot => ({
+            time: new Date(snapshot.timestamp).toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: timeframe === '24h' ? '2-digit' : undefined,
+              minute: timeframe === '24h' ? '2-digit' : undefined
+            }),
+            yesValue: parseFloat(snapshot.yes_volume),
+            noValue: parseFloat(snapshot.no_volume),
+            timestamp: new Date(snapshot.timestamp).getTime()
+          }))
+          setChartData(formattedData)
+        } else {
+          // Fall back to mock data if no real data exists yet
+          const mockData = generateVolumeGrowthData()
+          setChartData(mockData)
+        }
       } catch (error) {
-        console.error('Error generating volume data:', error)
+        console.error('Error fetching volume data:', error)
         setChartData(generateVolumeGrowthData())
       } finally {
         setIsLoading(false)
@@ -34,10 +54,11 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
     fetchData()
   }, [marketId, timeframe, card])
 
-  // Generate betting volume growth data
+  // Generate betting volume growth data for YES and NO
   const generateVolumeGrowthData = () => {
-    // Get current total volume from card data
-    const currentVolume = card ? Number(formatEther(card.totalLiquidity)) : 1000
+    // Get current YES and NO volumes from card data
+    const currentYesVolume = card ? Number(formatEther(card.totalYesShares)) : 500
+    const currentNoVolume = card ? Number(formatEther(card.totalNoShares)) : 500
     
     // Determine number of data points based on timeframe
     let dataPoints = 24 // 24h default
@@ -61,18 +82,24 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
     const data = []
     const now = Date.now()
     
-    // Generate cumulative growth curve
+    // Generate cumulative growth curves for YES and NO
     for (let i = dataPoints; i >= 0; i--) {
       const time = now - (i * intervalMs)
       const progress = 1 - (i / dataPoints) // 0 to 1
       
-      // Create an S-curve for realistic betting volume growth
-      const sCurve = 1 / (1 + Math.exp(-10 * (progress - 0.5)))
-      const value = currentVolume * sCurve
+      // Create S-curves for realistic betting volume growth (slightly different for YES/NO)
+      const sCurveYes = 1 / (1 + Math.exp(-10 * (progress - 0.5)))
+      const sCurveNo = 1 / (1 + Math.exp(-9 * (progress - 0.55))) // Slightly different curve
+      
+      const yesValue = currentYesVolume * sCurveYes
+      const noValue = currentNoVolume * sCurveNo
       
       // Add some random variance
-      const variance = value * 0.05 * (Math.random() - 0.5)
-      const finalValue = Math.max(0, value + variance)
+      const yesVariance = yesValue * 0.05 * (Math.random() - 0.5)
+      const noVariance = noValue * 0.05 * (Math.random() - 0.5)
+      
+      const finalYesValue = Math.max(0, yesValue + yesVariance)
+      const finalNoValue = Math.max(0, noValue + noVariance)
       
       data.push({
         time: new Date(time).toLocaleString('en-US', {
@@ -81,7 +108,8 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
           hour: timeframe === '24h' ? '2-digit' : undefined,
           minute: timeframe === '24h' ? '2-digit' : undefined
         }),
-        value: parseFloat(finalValue.toFixed(2)),
+        yesValue: parseFloat(finalYesValue.toFixed(2)),
+        noValue: parseFloat(finalNoValue.toFixed(2)),
         timestamp: time
       })
     }
@@ -93,8 +121,17 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
     if (active && payload && payload.length) {
       return (
         <div className="glass rounded-lg p-3 border border-white/10">
-          <p className="text-white font-semibold">{payload[0].value.toFixed(2)} TAO</p>
-          <p className="text-white/60 text-xs">{payload[0].payload.time}</p>
+          <p className="text-white/60 text-xs mb-2">{payload[0].payload.time}</p>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-green-400 text-xs">YES:</span>
+              <span className="text-white font-semibold">{payload[0]?.value?.toFixed(2) || '0'} TAO</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-red-400 text-xs">NO:</span>
+              <span className="text-white font-semibold">{payload[1]?.value?.toFixed(2) || '0'} TAO</span>
+            </div>
+          </div>
         </div>
       )
     }
@@ -134,9 +171,13 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
             <defs>
-              <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ffffff" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#ffffff" stopOpacity={0} />
+              <linearGradient id="colorYes" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="colorNo" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis 
@@ -168,10 +209,19 @@ export function MarketChart({ marketId, netuid }: MarketChartProps) {
             <Tooltip content={<CustomTooltip />} />
             <Area
               type="monotone"
-              dataKey="value"
-              stroke="#ffffff"
+              dataKey="yesValue"
+              stroke="#22c55e"
               strokeWidth={2}
-              fill="url(#colorValue)"
+              fill="url(#colorYes)"
+              name="YES"
+            />
+            <Area
+              type="monotone"
+              dataKey="noValue"
+              stroke="#ef4444"
+              strokeWidth={2}
+              fill="url(#colorNo)"
+              name="NO"
             />
           </AreaChart>
         </ResponsiveContainer>

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { BETTING_CONTRACT_ADDRESS, BETTING_ABI } from '@/lib/contracts'
 import { showErrorToast, showSuccessToast, showLoadingToast, dismissToast } from '@/lib/errorHandling'
-import { addBetHistory } from '@/lib/supabase'
+import { addBetHistory, recordVolumeSnapshot } from '@/lib/supabase'
 import { X, TrendingUp, AlertCircle, Info } from 'lucide-react'
 
 interface BettingModalProps {
@@ -60,8 +60,8 @@ export function BettingModal({
   // Format betted amounts for display
   const formatBettedAmount = (amount: number) => {
     if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`
-    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`
-    return amount.toFixed(1)
+    if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`
+    return amount.toFixed(4)
   }
 
   const yesBettedAmount = Number(formatEther(currentYesShares))
@@ -133,11 +133,27 @@ export function BettingModal({
       
       // Save to Supabase
       if (address && txData?.hash) {
+        // Record individual bet
         addBetHistory(
           cardId,
           address,
           selectedOutcome,
           amount,
+          txData.hash
+        )
+
+        // Record volume snapshot with new cumulative totals
+        const newYesVolume = selectedOutcome === 'yes' 
+          ? yesBettedAmount + Number(amount)
+          : yesBettedAmount
+        const newNoVolume = selectedOutcome === 'no'
+          ? noBettedAmount + Number(amount)
+          : noBettedAmount
+
+        recordVolumeSnapshot(
+          cardId,
+          newYesVolume.toString(),
+          newNoVolume.toString(),
           txData.hash
         )
       }
@@ -146,7 +162,7 @@ export function BettingModal({
       onSuccess?.()
       onClose()
     }
-  }, [isConfirmed, loadingToastId, selectedOutcome, amount, cardId, address, txData, onSuccess, onClose])
+  }, [isConfirmed, loadingToastId, selectedOutcome, amount, cardId, address, txData, onSuccess, onClose, yesBettedAmount, noBettedAmount])
 
   // Handle errors
   useEffect(() => {
@@ -211,7 +227,11 @@ export function BettingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-white/20 text-white max-w-md">
+      <DialogContent 
+        className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-white/20 text-white max-w-md"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-bold">Place Your Bet</DialogTitle>
