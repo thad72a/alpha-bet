@@ -8,6 +8,16 @@ export const BETTING_ABI = [
   },
   {
     "inputs": [],
+    "name": "AlreadyDisputed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyVoted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "BettingPeriodEnded",
     "type": "error"
   },
@@ -28,7 +38,22 @@ export const BETTING_ABI = [
   },
   {
     "inputs": [],
+    "name": "DisputePeriodActive",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DisputePeriodEnded",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "IncorrectPaymentAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientBond",
     "type": "error"
   },
   {
@@ -63,6 +88,11 @@ export const BETTING_ABI = [
   },
   {
     "inputs": [],
+    "name": "NoProposalExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "NoSharesToPurchase",
     "type": "error"
   },
@@ -73,12 +103,27 @@ export const BETTING_ABI = [
   },
   {
     "inputs": [],
+    "name": "NotParticipant",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ResolutionAlreadyProposed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ResolutionTimeNotReached",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "TransferFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "VotingNotActive",
     "type": "error"
   },
   {
@@ -310,6 +355,99 @@ export const BETTING_ABI = [
       {
         "indexed": true,
         "internalType": "address",
+        "name": "challenger",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bondAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "ResolutionDisputed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "cardId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "proposalAccepted",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bondWinner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bondPayout",
+        "type": "uint256"
+      }
+    ],
+    "name": "ResolutionFinalized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "cardId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "proposer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "proposedPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "proposedOption",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bondAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "ResolutionProposed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "cardId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "user",
         "type": "address"
       },
@@ -370,6 +508,37 @@ export const BETTING_ABI = [
       }
     ],
     "name": "SharesRedeemed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "cardId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "voter",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "supportsProposal",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "voteWeight",
+        "type": "uint256"
+      }
+    ],
+    "name": "VoteCast",
     "type": "event"
   },
   {
@@ -556,6 +725,45 @@ export const BETTING_ABI = [
   },
   {
     "inputs": [],
+    "name": "disputePeriod",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      }
+    ],
+    "name": "disputeResolution",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      }
+    ],
+    "name": "finalizeResolution",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getAccumulatedFees",
     "outputs": [
       {
@@ -717,6 +925,82 @@ export const BETTING_ABI = [
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getProposal",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "proposer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "proposedPrice",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "proposedOption",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "bondAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "proposalTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "disputed",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "challenger",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "challengerBond",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "yesVotes",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "noVotes",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "votingActive",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BettingCard.ResolutionProposal",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_user",
         "type": "address"
@@ -774,6 +1058,78 @@ export const BETTING_ABI = [
         "internalType": "struct BettingCard.Share",
         "name": "",
         "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "getVotingPower",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "hasUserVoted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "hasVoted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -864,6 +1220,111 @@ export const BETTING_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "proposals",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "proposer",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "proposedPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "proposedOption",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bondAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "proposalTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "disputed",
+        "type": "bool"
+      },
+      {
+        "internalType": "address",
+        "name": "challenger",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "challengerBond",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "yesVotes",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "noVotes",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "votingActive",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_actualAlphaPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "proposeResolution",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_winningOption",
+        "type": "uint256"
+      }
+    ],
+    "name": "proposeResolutionMulti",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "_cardId",
         "type": "uint256"
       },
@@ -917,6 +1378,19 @@ export const BETTING_ABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "resolutionBond",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -956,11 +1430,50 @@ export const BETTING_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "_newPeriod",
+        "type": "uint256"
+      }
+    ],
+    "name": "setDisputePeriod",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "_fee",
         "type": "uint256"
       }
     ],
     "name": "setPlatformFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_newBond",
+        "type": "uint256"
+      }
+    ],
+    "name": "setResolutionBond",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_newPeriod",
+        "type": "uint256"
+      }
+    ],
+    "name": "setVotingPeriod",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1037,6 +1550,37 @@ export const BETTING_ABI = [
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_cardId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_supportsProposal",
+        "type": "bool"
+      }
+    ],
+    "name": "voteOnResolution",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "votingPeriod",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "withdrawFees",
     "outputs": [],
@@ -1047,4 +1591,4 @@ export const BETTING_ABI = [
     "stateMutability": "payable",
     "type": "receive"
   }
-] as const;
+] as const
