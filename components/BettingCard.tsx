@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { BettingCardData } from '@/types/subnet'
 import { formatTAO, formatTimestamp } from '@/lib/bittensor'
 import { BettingModal } from '@/components/BettingModal'
-import { getCardStatus } from '@/lib/card-helpers'
+import { getCardStatus, EnrichedBettingCard } from '@/lib/card-helpers'
 import { 
   Copy, 
   Bookmark, 
@@ -21,7 +21,7 @@ import {
 import { useSubnet } from '@/components/SubnetProvider'
 
 interface BettingCardProps {
-  card: BettingCardData
+  card: BettingCardData | EnrichedBettingCard
   onBet: (cardId: number, isYes: boolean, shares: number) => void
   userShares?: { yesShares: number; noShares: number }
 }
@@ -89,7 +89,15 @@ export function BettingCard({ card }: BettingCardProps) {
     return `$${volume}`
   }
 
-  const status = getCardStatus(card)
+  // Check if card is enriched, otherwise create minimal status
+  const isEnriched = 'isPendingResolution' in card
+  const status = isEnriched 
+    ? getCardStatus(card as EnrichedBettingCard)
+    : {
+        label: card.resolved ? 'Resolved' : 'Active',
+        color: 'text-white',
+        bgColor: card.resolved ? 'bg-blue-500/20 border-blue-500/50' : 'bg-green-500/20 border-green-500/50'
+      }
 
   return (
     <Card 

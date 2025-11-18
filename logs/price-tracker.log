@@ -28881,3 +28881,15 @@ ReferenceError: Headers is not defined
     at Module.load (internal/modules/cjs/loader.js:863:32)
     at Function.Module._load (internal/modules/cjs/loader.js:708:14)
     at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+❌ Error: Supabase credentials not found in environment variables
+   Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY to .env.local
