@@ -20,7 +20,7 @@ const fetch = require('node-fetch')
 // Load environment variables
 require('dotenv').config({ path: '.env.local' })
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://161.97.128.68:8000'
+const BACKEND_URL = process.env.BACKEND_URL || 'https://api.pricemarkets.io'
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

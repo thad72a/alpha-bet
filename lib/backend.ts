@@ -11,7 +11,7 @@ export type BackendSubnetSummary = {
   block?: number | null
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://161.97.128.68:8000'
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'https://api.pricemarkets.io'
 
 // Use proxy in browser on production to avoid mixed content issues
 function getBackendUrl(path: string): string {

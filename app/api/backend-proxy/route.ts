@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://161.97.128.68:8000'
+const BACKEND_URL = process.env.BACKEND_URL || 'https://api.pricemarkets.io'
 
 export async function GET(request: NextRequest) {
   const path = request.nextUrl.searchParams.get('path') || ''
