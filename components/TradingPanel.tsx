@@ -28,6 +28,9 @@ export function TradingPanel({ market }: TradingPanelProps) {
     setIsMounted(true)
   }, [])
 
+  // Check if betting is disabled (market resolved or past deadline)
+  const isBettingDisabled = market.resolved || (Date.now() / 1000 > market.timestamp)
+
   const presetAmounts = [1, 3, 5, 10]
 
   const handlePresetAmount = (preset: number) => {
@@ -381,9 +384,11 @@ export function TradingPanel({ market }: TradingPanelProps) {
             className={`w-full h-14 text-base font-bold rounded-xl ${
               selectedOutcome === 'yes' ? 'btn-yes' : 'btn-no'
             }`}
-            disabled={!amount || parseFloat(amount) <= 0 || isPurchasing || isConfirming || !purchaseShares}
+            disabled={!amount || parseFloat(amount) <= 0 || isPurchasing || isConfirming || !purchaseShares || isBettingDisabled}
           >
-            {isPurchasing || isConfirming ? (
+            {isBettingDisabled ? (
+              market.resolved ? 'Market Resolved' : 'Betting Closed'
+            ) : isPurchasing || isConfirming ? (
               <span className="flex items-center space-x-2">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 <span>{isConfirming ? 'Confirming...' : 'Processing...'}</span>

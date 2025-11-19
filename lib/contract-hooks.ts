@@ -29,17 +29,19 @@ export interface BettingCardData {
  * Get the total number of betting cards
  */
 export function useCardCount() {
-  const { data, isLoading, isError } = useContractRead({
+  const { data, isLoading, isError, refetch } = useContractRead({
     address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
     abi: BETTING_ABI,
     functionName: 'getCardCount',
-    watch: true, // Auto-refresh when new cards are created
+    // Removed watch: true to reduce RPC calls - refetch manually when needed
+    cacheTime: 30_000, // Cache for 30 seconds
   })
 
   return {
     count: data ? Number(data) : 0,
     isLoading,
     isError,
+    refetch,
   }
 }
 
@@ -53,7 +55,8 @@ export function useCard(cardId: number) {
     functionName: 'getCard',
     args: [BigInt(cardId)],
     enabled: cardId > 0,
-    watch: true,
+    // Removed watch: true to reduce RPC calls
+    cacheTime: 20_000, // Cache for 20 seconds
   })
 
   return {
@@ -77,9 +80,10 @@ export function useCards(cardIds: number[]) {
     }))
   }, [cardIds])
 
-  const { data, isLoading, isError } = useContractReads({
+  const { data, isLoading, isError, refetch } = useContractReads({
     contracts,
-    watch: true,
+    // Removed watch: true to reduce RPC calls
+    cacheTime: 20_000, // Cache for 20 seconds
   })
 
   const cards = useMemo(() => {
@@ -98,6 +102,7 @@ export function useCards(cardIds: number[]) {
     cards,
     isLoading,
     isError,
+    refetch,
   }
 }
 
@@ -133,7 +138,8 @@ export function useUserShares(userAddress: string | undefined, cardId: number) {
     functionName: 'getUserShares',
     args: userAddress && cardId > 0 ? [userAddress as `0x${string}`, BigInt(cardId)] : undefined,
     enabled: Boolean(userAddress && cardId > 0),
-    watch: true,
+    // Removed watch: true to reduce RPC calls
+    cacheTime: 15_000, // Cache for 15 seconds
   })
 
   return {
@@ -161,7 +167,8 @@ export function useUserOptionStake(
         ? [userAddress as `0x${string}`, BigInt(cardId), BigInt(optionIndex)]
         : undefined,
     enabled: Boolean(userAddress && cardId > 0),
-    watch: true,
+    // Removed watch: true to reduce RPC calls
+    cacheTime: 15_000,
   })
 
   return {
@@ -176,19 +183,21 @@ export function useUserOptionStake(
  * Get total stake for a specific option
  */
 export function useOptionTotalStake(cardId: number, optionIndex: number) {
-  const { data, isLoading, isError } = useContractRead({
+  const { data, isLoading, isError, refetch } = useContractRead({
     address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
     abi: BETTING_ABI,
     functionName: 'getOptionTotalStake',
     args: cardId > 0 ? [BigInt(cardId), BigInt(optionIndex)] : undefined,
     enabled: cardId > 0,
-    watch: true,
+    // Removed watch: true to reduce RPC calls
+    cacheTime: 20_000,
   })
 
   return {
     totalStake: data as bigint | undefined,
     isLoading,
     isError,
+    refetch,
   }
 }
 
@@ -243,7 +252,8 @@ export function useAccumulatedFees() {
     address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
     abi: BETTING_ABI,
     functionName: 'getAccumulatedFees',
-    watch: true,
+    // Removed watch: true - this doesn't need real-time updates
+    cacheTime: 60_000, // Cache for 1 minute
   })
 
   return {
@@ -277,7 +287,8 @@ export function useProposal(cardId: number) {
     abi: BETTING_ABI,
     functionName: 'getProposal',
     args: [BigInt(cardId)],
-    watch: true,
+    // Removed watch: true - refetch after resolution actions
+    cacheTime: 15_000,
   })
 
   return {
@@ -298,7 +309,8 @@ export function useVotingPower(cardId: number, userAddress: string | undefined) 
     functionName: 'getVotingPower',
     args: [BigInt(cardId), userAddress as `0x${string}`],
     enabled: !!userAddress,
-    watch: true,
+    // Removed watch: true to reduce RPC calls
+    cacheTime: 30_000,
   })
 
   return {
@@ -317,7 +329,8 @@ export function useHasVoted(cardId: number, userAddress: string | undefined) {
     functionName: 'hasUserVoted',
     args: [BigInt(cardId), userAddress as `0x${string}`],
     enabled: !!userAddress,
-    watch: true,
+    // Removed watch: true to reduce RPC calls
+    cacheTime: 30_000,
   })
 
   return {
@@ -334,7 +347,8 @@ export function useResolutionBond() {
     address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
     abi: BETTING_ABI,
     functionName: 'resolutionBond',
-    watch: true,
+    // Removed watch: true - this is a constant, doesn't change
+    cacheTime: 300_000, // Cache for 5 minutes
   })
 
   return {
@@ -351,7 +365,8 @@ export function useDisputePeriod() {
     address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
     abi: BETTING_ABI,
     functionName: 'disputePeriod',
-    watch: true,
+    // Removed watch: true - this is a constant, doesn't change
+    cacheTime: 300_000, // Cache for 5 minutes
   })
 
   return {
@@ -368,7 +383,8 @@ export function useVotingPeriod() {
     address: BETTING_CONTRACT_ADDRESS as `0x${string}`,
     abi: BETTING_ABI,
     functionName: 'votingPeriod',
-    watch: true,
+    // Removed watch: true - this is a constant, doesn't change
+    cacheTime: 300_000, // Cache for 5 minutes
   })
 
   return {

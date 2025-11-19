@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { MarketChart } from '@/components/MarketChart'
 import { TradingPanel } from '@/components/TradingPanel'
+import { ResolutionPanel } from '@/components/ResolutionPanel'
 import { OrderBook } from '@/components/OrderBook'
 import { useCard, useUserShares } from '@/lib/contract-hooks'
 import { useSubnet } from '@/components/SubnetProvider'
@@ -498,10 +499,18 @@ export default function MarketDetail() {
             </Card>
           </div>
 
-          {/* Right Column - Trading Panel */}
+          {/* Right Column - Trading/Resolution Panel */}
           <div className="lg:col-span-1">
-            <div className="sticky top-8">
-              <TradingPanel market={market} />
+            <div className="sticky top-8 space-y-6">
+              {/* Show Resolution Panel if card is past deadline and not resolved */}
+              {!market.resolved && Date.now() / 1000 > market.timestamp ? (
+                <ResolutionPanel market={market} />
+              ) : (
+                <TradingPanel market={market} />
+              )}
+              
+              {/* Always show TradingPanel but make it read-only if resolved */}
+              {market.resolved && <TradingPanel market={market} />}
             </div>
           </div>
         </div>
