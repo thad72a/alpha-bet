@@ -69,22 +69,13 @@ const { chains, publicClient } = configureChains(
           ? 'https://test.chain.opentensor.ai'
           : 'http://127.0.0.1:8545',
       }),
-      // Increase polling interval to reduce RPC calls
-      pollingInterval: 30_000, // 30 seconds (from default 4 seconds)
-      stallTimeout: 10_000, // 10 seconds
     }),
   ],
   {
-    // Enable batch requests to reduce RPC calls
-    batch: {
-      multicall: {
-        wait: 100, // Wait 100ms before batching calls
-      },
-    },
-    // Longer polling interval for contract reads
-    pollingInterval: 30_000, // 30 seconds
-    // Cache for 20 seconds to avoid duplicate requests
-    cacheTime: 20_000,
+    // Longer polling interval for contract reads - reduces RPC calls by 87.5%
+    pollingInterval: 30_000, // 30 seconds (from default 4 seconds)
+    // Increase stall timeout
+    stallTimeout: 10_000, // 10 seconds
   }
 )
 
