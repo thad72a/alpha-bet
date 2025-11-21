@@ -4,13 +4,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { useRouter } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, TrendingUp, TrendingDown, Clock, DollarSign, Target, Award, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Target } from 'lucide-react'
 import { useAllCards } from '@/lib/contract-hooks'
-import { formatEther } from 'viem'
 import { enrichCard } from '@/lib/card-helpers'
 import { useSubnetSummaries } from '@/components/SubnetProvider'
+import { PortfolioCard } from '@/components/PortfolioCard'
 
 export default function Portfolio() {
   const router = useRouter()
@@ -34,145 +34,21 @@ export default function Portfolio() {
     })
   }, [blockchainCards, summaries])
 
-  // Filter cards where user has positions
-  // Note: We'll need to check shares on-chain for each card
-  // For now, show all cards and let individual components handle share display
-  const userPositions = useMemo(() => {
-    if (!address || !enrichedCards.length) return []
-    
-    // Return all cards - we'll filter by shares in the render
-    // This is because userShares needs to be fetched per-card with useUserShares hook
-    return enrichedCards
-  }, [enrichedCards, address])
-
-  // Categorize positions
-  const activePositions = useMemo(() => 
-    userPositions.filter(card => card.isActive), 
-    [userPositions]
+  // Categorize enriched cards for display
+  const activeCards = useMemo(() => 
+    enrichedCards.filter(card => card.isActive), 
+    [enrichedCards]
   )
   
-  const pendingPositions = useMemo(() => 
-    userPositions.filter(card => card.isPendingResolution), 
-    [userPositions]
+  const pendingCards = useMemo(() => 
+    enrichedCards.filter(card => card.isPendingResolution), 
+    [enrichedCards]
   )
   
-  const resolvedPositions = useMemo(() => 
-    userPositions.filter(card => card.resolved), 
-    [userPositions]
+  const resolvedCards = useMemo(() => 
+    enrichedCards.filter(card => card.resolved), 
+    [enrichedCards]
   )
-
-  // Calculate portfolio stats
-  // Note: This is placeholder until we fetch actual user shares
-  const portfolioStats = useMemo(() => {
-    // For now, return placeholder stats
-    // TODO: Fetch user shares for each card to calculate accurate stats
-    return {
-      totalInvested: 0,
-      potentialWinnings: 0,
-      unrealizedPL: 0,
-      realizedPL: 0,
-      wins: 0,
-      losses: 0,
-      winRate: 0,
-      totalPositions: 0
-    }
-  }, [userPositions])
-
-  const renderPositionCard = (card: any) => {
-    // Placeholder values - actual shares need to be fetched per card
-    const yesShares = 0
-    const noShares = 0
-    const totalInvested = 0
-    
-    const totalPool = Number(formatEther(card.totalLiquidity || 0n))
-    const maxPayout = 0
-    const potentialProfit = 0
-
-    return (
-      <Card key={card.id} className="premium-card hover:border-white/20 transition-all cursor-pointer" onClick={() => router.push(`/market/${card.id}`)}>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                  card.resolved 
-                    ? 'bg-blue-500/20 text-blue-300'
-                    : card.isPendingResolution
-                    ? 'bg-yellow-500/20 text-yellow-300'
-                    : 'bg-green-500/20 text-green-300'
-                }`}>
-                  {card.resolved ? 'Resolved' : card.isPendingResolution ? 'Pending' : 'Active'}
-                </span>
-                <span className="text-xs text-white/60">SN{card.netuid}</span>
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">{card.title || card.question}</h3>
-              
-              {/* User's Position */}
-              <div className="flex items-center space-x-4 text-sm mb-3">
-                {yesShares > 0 && (
-                  <div className="flex items-center space-x-1">
-                    <TrendingUp className="w-4 h-4 text-green-400" />
-                    <span className="text-white font-medium">{yesShares.toFixed(2)} YES</span>
-                  </div>
-                )}
-                {noShares > 0 && (
-                  <div className="flex items-center space-x-1">
-                    <TrendingDown className="w-4 h-4 text-red-400" />
-                    <span className="text-white font-medium">{noShares.toFixed(2)} NO</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs text-white/60 mb-1">Invested</div>
-              <div className="text-lg font-bold text-white">{totalInvested.toFixed(2)} TAO</div>
-            </div>
-            <div>
-              <div className="text-xs text-white/60 mb-1">
-                {card.resolved ? 'Final Payout' : 'Max Payout'}
-              </div>
-              <div className={`text-lg font-bold ${
-                potentialProfit >= 0 ? 'text-green-400' : 'text-red-400'
-              }`}>
-                {maxPayout.toFixed(2)} TAO
-                <span className="text-xs ml-1">
-                  ({potentialProfit >= 0 ? '+' : ''}{potentialProfit.toFixed(2)})
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Resolved Outcome */}
-          {card.resolved && (
-            <div className={`mt-4 p-3 rounded-lg ${
-              card.outcome 
-                ? yesShares > noShares ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'
-                : noShares > yesShares ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-white/80">
-                  Resolved: <span className="font-bold">{card.outcome ? 'YES' : 'NO'}</span>
-                </span>
-                <span className={`text-sm font-bold ${
-                  (card.outcome && yesShares > noShares) || (!card.outcome && noShares > yesShares)
-                    ? 'text-green-400'
-                    : 'text-red-400'
-                }`}>
-                  {(card.outcome && yesShares > noShares) || (!card.outcome && noShares > yesShares)
-                    ? '✅ WON'
-                    : '❌ LOST'}
-                </span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    )
-  }
 
   if (!isMounted) {
     return null
@@ -259,113 +135,60 @@ export default function Portfolio() {
           </Card>
         ) : (
           <>
-            {/* Note: Portfolio stats coming soon */}
-            <Card className="premium-card mb-6">
-              <CardContent className="p-4 text-center">
-                <p className="text-white/60 text-sm">
-                  📊 Portfolio statistics will be calculated once you place bets. Click on any market below to start betting!
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Portfolio Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 opacity-50">
-              <Card className="premium-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 text-sm">Total Invested</span>
-                    <DollarSign className="w-4 h-4 text-white/40" />
-                  </div>
-                  <div className="text-2xl font-bold text-white">
-                    {portfolioStats.totalInvested.toFixed(2)} TAO
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="premium-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 text-sm">Potential Value</span>
-                    <TrendingUp className="w-4 h-4 text-green-400" />
-                  </div>
-                  <div className="text-2xl font-bold text-white">
-                    {portfolioStats.potentialWinnings.toFixed(2)} TAO
-                  </div>
-                  <div className={`text-xs mt-1 ${
-                    portfolioStats.unrealizedPL >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {portfolioStats.unrealizedPL >= 0 ? '+' : ''}{portfolioStats.unrealizedPL.toFixed(2)} TAO
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="premium-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 text-sm">Win Rate</span>
-                    <Award className="w-4 h-4 text-yellow-400" />
-                  </div>
-                  <div className="text-2xl font-bold text-white">
-                    {portfolioStats.winRate.toFixed(0)}%
-                  </div>
-                  <div className="text-xs text-white/60 mt-1">
-                    {portfolioStats.wins}W / {portfolioStats.losses}L
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="premium-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 text-sm">Active Markets</span>
-                    <Target className="w-4 h-4 text-blue-400" />
-                  </div>
-                  <div className="text-2xl font-bold text-white">
-                    {portfolioStats.totalPositions}
-                  </div>
-                  <div className="text-xs text-white/60 mt-1">
-                    {activePositions.length} active
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Active Positions */}
-            {activePositions.length > 0 && (
+            {activeCards.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
                   <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
-                  Active Positions ({activePositions.length})
+                  Active Markets ({activeCards.length})
                 </h2>
+                <p className="text-white/60 text-sm mb-4">
+                  Only markets where you have positions will be shown below.
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {activePositions.map(renderPositionCard)}
+                  {activeCards.map(card => (
+                    <PortfolioCard key={card.id} card={card} userAddress={address!} />
+                  ))}
                 </div>
               </div>
             )}
 
             {/* Pending Resolution */}
-            {pendingPositions.length > 0 && (
+            {pendingCards.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
                   <span className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></span>
-                  Pending Resolution ({pendingPositions.length})
+                  Pending Resolution ({pendingCards.length})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {pendingPositions.map(renderPositionCard)}
+                  {pendingCards.map(card => (
+                    <PortfolioCard key={card.id} card={card} userAddress={address!} />
+                  ))}
                 </div>
               </div>
             )}
 
             {/* Resolved Positions */}
-            {resolvedPositions.length > 0 && (
+            {resolvedCards.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
                   <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
-                  Resolved ({resolvedPositions.length})
+                  Resolved ({resolvedCards.length})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {resolvedPositions.map(renderPositionCard)}
+                  {resolvedCards.map(card => (
+                    <PortfolioCard key={card.id} card={card} userAddress={address!} />
+                  ))}
                 </div>
+              </div>
+            )}
+
+            {/* Note if portfolio loads but has no positions */}
+            {enrichedCards.length > 0 && (
+              <div className="mt-8">
+                <p className="text-white/40 text-sm text-center">
+                  💡 Tip: Only markets where you have positions are displayed. Place bets to see them here!
+                </p>
               </div>
             )}
           </>
