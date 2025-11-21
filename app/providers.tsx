@@ -9,28 +9,34 @@ import { ToastProvider } from '@/components/Providers'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { SubnetProvider } from '@/components/SubnetProvider'
 
-// Define Localhost chain configuration for development
-const localhost: Chain = {
-  id: 1337,
-  name: 'Localhost',
-  network: 'localhost',
+// Define Bittensor Mainnet (default network)
+const bittensorMainnet: Chain = {
+  id: 966,
+  name: 'Bittensor',
+  network: 'bittensor-mainnet',
   nativeCurrency: {
     decimals: 18,
-    name: 'Ether',
-    symbol: 'ETH',
+    name: 'TAO',
+    symbol: 'TAO',
   },
   rpcUrls: {
     default: {
-      http: ['http://127.0.0.1:8545'],
+      http: ['https://lite.chain.opentensor.ai'],
     },
     public: {
-      http: ['http://127.0.0.1:8545'],
+      http: ['https://lite.chain.opentensor.ai'],
     },
   },
-  testnet: true,
+  blockExplorers: {
+    default: { 
+      name: 'Taostats EVM Explorer', 
+      url: 'https://evm.taostats.io' 
+    },
+  },
+  testnet: false,
 }
 
-// Define Bittensor Testnet chain configuration
+// Define Bittensor Testnet
 const bittensorTestnet: Chain = {
   id: 945,
   name: 'Bittensor Testnet',
@@ -57,18 +63,49 @@ const bittensorTestnet: Chain = {
   testnet: true,
 }
 
-// Configure chains - Use localhost for development, or change to bittensorTestnet for testnet
+// Determine which chains to include based on environment
+const isDevelopment = process.env.NODE_ENV === 'development'
+
+// Localhost chain (only in development)
+const localhost: Chain = {
+  id: 1337,
+  name: 'Localhost',
+  network: 'localhost',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['http://127.0.0.1:8545'],
+    },
+    public: {
+      http: ['http://127.0.0.1:8545'],
+    },
+  },
+  testnet: true,
+}
+
+// Configure available chains - Mainnet is default, Testnet is option to switch
+const availableChains = isDevelopment 
+  ? [bittensorMainnet, bittensorTestnet, localhost]  // Dev: Include localhost
+  : [bittensorMainnet, bittensorTestnet]             // Production: Only Bittensor networks
+
 const { chains, publicClient } = configureChains(
-  [localhost, bittensorTestnet],
+  availableChains,
   [
     jsonRpcProvider({
-      rpc: (chain) => ({
-        http: chain.id === 1337
-          ? process.env.NEXT_PUBLIC_RPC_URL || 'http://127.0.0.1:8545'
-          : chain.id === 945 
-          ? 'https://test.chain.opentensor.ai'
-          : 'http://127.0.0.1:8545',
-      }),
+      rpc: (chain) => {
+        if (chain.id === 966) {
+          return { http: 'https://lite.chain.opentensor.ai' }
+        } else if (chain.id === 945) {
+          return { http: 'https://test.chain.opentensor.ai' }
+        } else if (chain.id === 1337) {
+          return { http: process.env.NEXT_PUBLIC_RPC_URL || 'http://127.0.0.1:8545' }
+        }
+        return { http: 'https://lite.chain.opentensor.ai' } // Fallback to mainnet
+      },
     }),
   ],
   {
@@ -80,7 +117,7 @@ const { chains, publicClient } = configureChains(
 )
 
 const { connectors } = getDefaultWallets({
-  appName: 'Alpha Bet',
+  appName: 'PriceMarkets',
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'dummy-project-id',
   chains,
 })
@@ -90,6 +127,12 @@ const config = createConfig({
   connectors,
   publicClient,
 })
+
+// Log network configuration
+if (typeof window !== 'undefined') {
+  console.log('🌐 Available Networks:', availableChains.map(c => `${c.name} (${c.id})`).join(', '))
+  console.log('✅ Default Network: Bittensor Mainnet (966)')
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
