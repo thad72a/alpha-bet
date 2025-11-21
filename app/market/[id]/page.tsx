@@ -21,11 +21,13 @@ import {
   ChevronDown,
   MessageSquare,
   BarChart3,
-  Send
+  Send,
+  Briefcase
 } from 'lucide-react'
 import { MarketChart } from '@/components/MarketChart'
 import { TradingPanel } from '@/components/TradingPanel'
 import { ResolutionPanel } from '@/components/ResolutionPanel'
+import { YourPosition } from '@/components/YourPosition'
 import { OrderBook } from '@/components/OrderBook'
 import { useCard, useUserShares } from '@/lib/contract-hooks'
 import { useSubnet } from '@/components/SubnetProvider'
@@ -242,6 +244,16 @@ export default function MarketDetail() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {isMounted && isConnected && (
+                <Button
+                  onClick={() => router.push('/portfolio')}
+                  className="btn-secondary"
+                  size="sm"
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Portfolio
+                </Button>
+              )}
               {isMounted && <ConnectButton />}
             </div>
           </div>
@@ -502,6 +514,13 @@ export default function MarketDetail() {
           {/* Right Column - Trading/Resolution Panel */}
           <div className="lg:col-span-1">
             <div className="sticky top-8 space-y-6">
+              {/* Show user's position if they have one */}
+              {address && userShares && (
+                Number(formatEther(userShares.yesShares)) > 0 || Number(formatEther(userShares.noShares)) > 0
+              ) && (
+                <YourPosition market={market} userShares={userShares} />
+              )}
+              
               {/* Show Resolution Panel if card is past deadline and not resolved */}
               {!market.resolved && Date.now() / 1000 > market.timestamp ? (
                 <ResolutionPanel market={market} />

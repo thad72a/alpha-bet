@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useAccount } from 'wagmi'
+import { useRouter } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,7 +22,8 @@ import {
   TrendingUp, 
   ArrowUpRight,
   Target,
-  Rocket
+  Rocket,
+  Briefcase
 } from 'lucide-react'
 
 // Contract configuration
@@ -30,6 +32,7 @@ import { useAllCards } from '@/lib/contract-hooks'
 import { enrichCard, filterCards, sortCards } from '@/lib/card-helpers'
 
 export default function Home() {
+  const router = useRouter()
   const { address, isConnected } = useAccount()
   const [subnets, setSubnets] = useState<SubnetData[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAccount } from 'wagmi'
+import { formatEther } from 'viem'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BettingCardData } from '@/types/subnet'
@@ -16,7 +18,8 @@ import {
   Users,
   Activity,
   Clock,
-  DollarSign
+  DollarSign,
+  Target
 } from 'lucide-react'
 import { useSubnet } from '@/components/SubnetProvider'
 
@@ -30,11 +33,19 @@ interface BettingCardProps {
 
 export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: BettingCardProps) {
   const router = useRouter()
+  const { address } = useAccount()
   const [showBettingModal, setShowBettingModal] = useState(false)
   const [initialOutcome, setInitialOutcome] = useState<'yes' | 'no'>('yes')
   const [subnetName, setSubnetName] = useState<string | null>(null)
   const [subnetPrice, setSubnetPrice] = useState<number | null>(null)
   const subnetInfo = useSubnet(card.netuid)
+  
+  // Check if user has a position in this card
+  const enrichedCard = card as EnrichedBettingCard
+  const hasPosition = address && enrichedCard.userShares && (
+    Number(formatEther(enrichedCard.userShares.yesShares || 0n)) > 0 ||
+    Number(formatEther(enrichedCard.userShares.noShares || 0n)) > 0
+  )
   
   const cardId = `#${card.id.toString().padStart(6, '0')}`
   
@@ -116,8 +127,8 @@ export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: Be
         <div className="flex items-start justify-between">
           {/* Left side: ID + Question */}
           <div className="flex-1 pr-4">
-            {/* Card ID + Status Badge */}
-            <div className="flex items-center space-x-2 mb-3">
+            {/* Card ID + Status Badge + Position Indicator */}
+            <div className="flex items-center space-x-2 mb-3 flex-wrap gap-y-1">
               <span className="text-white/60 text-sm font-mono">{cardId}</span>
               <Button 
                 size="sm" 
@@ -130,6 +141,12 @@ export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: Be
               <span className={`px-2 py-0.5 rounded text-xs font-medium border ${status.bgColor} ${status.color}`}>
                 {status.label}
               </span>
+              {hasPosition && (
+                <span className="px-2 py-0.5 rounded text-xs font-medium border bg-purple-500/20 border-purple-500/50 text-purple-300 flex items-center space-x-1">
+                  <Target className="w-3 h-3" />
+                  <span>Your Position</span>
+                </span>
+              )}
             </div>
             {/* Question */}
             <div className="text-white font-medium text-sm leading-tight">

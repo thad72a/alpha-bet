@@ -12,11 +12,11 @@
     "rpcUrl": "https://test.chain.opentensor.ai",
     "blockExplorer": "https://evm.taostats.io",
     "contracts": {
-      "BettingCard": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "BettingCard": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
       "TAO": "native"
     },
     "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "deployedAt": "2025-11-18T11:25:13.925Z",
+    "deployedAt": "2025-11-21T16:01:13.907Z",
     "note": "TAO is native on Bittensor - no token contract address needed"
   }
 }
