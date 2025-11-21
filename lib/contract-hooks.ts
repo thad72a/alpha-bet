@@ -5,6 +5,7 @@
 
 import { useContractRead, useContractReads, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi'
 import { BETTING_CONTRACT_ADDRESS, BETTING_ABI } from './contracts'
+import { CACHE_TIME } from './constants'
 import { useMemo } from 'react'
 import { parseEther } from 'viem'
 
@@ -34,7 +35,7 @@ export function useCardCount() {
     abi: BETTING_ABI,
     functionName: 'getCardCount',
     // Removed watch: true to reduce RPC calls - refetch manually when needed
-    cacheTime: 30_000, // Cache for 30 seconds
+    cacheTime: CACHE_TIME.MEDIUM,
   })
 
   return {
@@ -56,7 +57,7 @@ export function useCard(cardId: number) {
     args: [BigInt(cardId)],
     enabled: cardId > 0,
     // Removed watch: true to reduce RPC calls
-    cacheTime: 20_000, // Cache for 20 seconds
+    cacheTime: CACHE_TIME.SHORT,
   })
 
   return {
@@ -83,7 +84,7 @@ export function useCards(cardIds: number[]) {
   const { data, isLoading, isError, refetch } = useContractReads({
     contracts,
     // Removed watch: true to reduce RPC calls
-    cacheTime: 20_000, // Cache for 20 seconds
+    cacheTime: CACHE_TIME.SHORT,
   })
 
   const cards = useMemo(() => {
@@ -139,7 +140,7 @@ export function useUserShares(userAddress: string | undefined, cardId: number) {
     args: userAddress && cardId > 0 ? [userAddress as `0x${string}`, BigInt(cardId)] : undefined,
     enabled: Boolean(userAddress && cardId > 0),
     // Removed watch: true to reduce RPC calls
-    cacheTime: 15_000, // Cache for 15 seconds
+    cacheTime: CACHE_TIME.VERY_SHORT,
   })
 
   return {
@@ -168,7 +169,7 @@ export function useUserOptionStake(
         : undefined,
     enabled: Boolean(userAddress && cardId > 0),
     // Removed watch: true to reduce RPC calls
-    cacheTime: 15_000,
+    cacheTime: CACHE_TIME.VERY_SHORT,
   })
 
   return {
@@ -190,7 +191,7 @@ export function useOptionTotalStake(cardId: number, optionIndex: number) {
     args: cardId > 0 ? [BigInt(cardId), BigInt(optionIndex)] : undefined,
     enabled: cardId > 0,
     // Removed watch: true to reduce RPC calls
-    cacheTime: 20_000,
+    cacheTime: CACHE_TIME.SHORT,
   })
 
   return {
@@ -253,7 +254,7 @@ export function useAccumulatedFees() {
     abi: BETTING_ABI,
     functionName: 'getAccumulatedFees',
     // Removed watch: true - this doesn't need real-time updates
-    cacheTime: 60_000, // Cache for 1 minute
+    cacheTime: CACHE_TIME.LONG,
   })
 
   return {
@@ -288,7 +289,7 @@ export function useProposal(cardId: number) {
     functionName: 'getProposal',
     args: [BigInt(cardId)],
     // Removed watch: true - refetch after resolution actions
-    cacheTime: 15_000,
+    cacheTime: CACHE_TIME.VERY_SHORT,
   })
 
   return {
@@ -310,7 +311,7 @@ export function useVotingPower(cardId: number, userAddress: string | undefined) 
     args: [BigInt(cardId), userAddress as `0x${string}`],
     enabled: !!userAddress,
     // Removed watch: true to reduce RPC calls
-    cacheTime: 30_000,
+    cacheTime: CACHE_TIME.MEDIUM,
   })
 
   return {
@@ -330,7 +331,7 @@ export function useHasVoted(cardId: number, userAddress: string | undefined) {
     args: [BigInt(cardId), userAddress as `0x${string}`],
     enabled: !!userAddress,
     // Removed watch: true to reduce RPC calls
-    cacheTime: 30_000,
+    cacheTime: CACHE_TIME.MEDIUM,
   })
 
   return {
@@ -348,7 +349,7 @@ export function useResolutionBond() {
     abi: BETTING_ABI,
     functionName: 'resolutionBond',
     // Removed watch: true - this is a constant, doesn't change
-    cacheTime: 300_000, // Cache for 5 minutes
+    cacheTime: CACHE_TIME.VERY_LONG,
   })
 
   return {
@@ -366,7 +367,7 @@ export function useDisputePeriod() {
     abi: BETTING_ABI,
     functionName: 'disputePeriod',
     // Removed watch: true - this is a constant, doesn't change
-    cacheTime: 300_000, // Cache for 5 minutes
+    cacheTime: CACHE_TIME.VERY_LONG,
   })
 
   return {
@@ -384,7 +385,7 @@ export function useVotingPeriod() {
     abi: BETTING_ABI,
     functionName: 'votingPeriod',
     // Removed watch: true - this is a constant, doesn't change
-    cacheTime: 300_000, // Cache for 5 minutes
+    cacheTime: CACHE_TIME.VERY_LONG,
   })
 
   return {

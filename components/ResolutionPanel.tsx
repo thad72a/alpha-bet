@@ -19,13 +19,15 @@ import {
   useVoteOnResolution,
   useFinalizeResolution
 } from '@/lib/contract-hooks'
+import { RESOLUTION_SUCCESS_DELAY } from '@/lib/constants'
 import { AlertCircle, Clock, Shield, Vote, CheckCircle, Info, Gavel } from 'lucide-react'
 
 interface ResolutionPanelProps {
   market: any
+  onResolutionSuccess?: () => void
 }
 
-export function ResolutionPanel({ market }: ResolutionPanelProps) {
+export function ResolutionPanel({ market, onResolutionSuccess }: ResolutionPanelProps) {
   const { address, isConnected } = useAccount()
   const [actualPrice, setActualPrice] = useState<string>('')
   const [selectedOption, setSelectedOption] = useState<number>(0)
@@ -140,8 +142,10 @@ export function ResolutionPanel({ market }: ResolutionPanelProps) {
       setActualPrice('')
       setTimeout(() => {
         refetchProposal()
-        window.location.reload()
-      }, 2000)
+        if (onResolutionSuccess) {
+          onResolutionSuccess()
+        }
+      }, RESOLUTION_SUCCESS_DELAY)
     }
   }, [proposalSuccessBinary, proposalSuccessMulti, loadingToastId, refetchProposal])
 
@@ -151,8 +155,10 @@ export function ResolutionPanel({ market }: ResolutionPanelProps) {
       showSuccessToast('Resolution disputed successfully!')
       setTimeout(() => {
         refetchProposal()
-        window.location.reload()
-      }, 2000)
+        if (onResolutionSuccess) {
+          onResolutionSuccess()
+        }
+      }, RESOLUTION_SUCCESS_DELAY)
     }
   }, [disputeSuccess, loadingToastId, refetchProposal])
 
@@ -162,8 +168,10 @@ export function ResolutionPanel({ market }: ResolutionPanelProps) {
       showSuccessToast('Vote cast successfully!')
       setTimeout(() => {
         refetchProposal()
-        window.location.reload()
-      }, 2000)
+        if (onResolutionSuccess) {
+          onResolutionSuccess()
+        }
+      }, RESOLUTION_SUCCESS_DELAY)
     }
   }, [voteYesSuccess, voteNoSuccess, loadingToastId, refetchProposal])
 
@@ -172,8 +180,10 @@ export function ResolutionPanel({ market }: ResolutionPanelProps) {
       if (loadingToastId) dismissToast(loadingToastId)
       showSuccessToast('Resolution finalized successfully!')
       setTimeout(() => {
-        window.location.reload()
-      }, 2000)
+        if (onResolutionSuccess) {
+          onResolutionSuccess()
+        }
+      }, RESOLUTION_SUCCESS_DELAY)
     }
   }, [finalizeSuccess, loadingToastId])
 

@@ -7,17 +7,18 @@ import { Target, TrendingUp, TrendingDown, DollarSign, Trophy } from 'lucide-rea
 
 interface YourPositionProps {
   market: any
-  userShares?: { yesShares: bigint; noShares: bigint }
+  userShares?: { yesShares: bigint; noShares: bigint } | null
 }
 
 export function YourPosition({ market, userShares }: YourPositionProps) {
   const position = useMemo(() => {
     if (!userShares) return null
 
-    const yesShares = Number(formatEther(userShares.yesShares))
-    const noShares = Number(formatEther(userShares.noShares))
+    try {
+      const yesShares = Number(formatEther(userShares.yesShares))
+      const noShares = Number(formatEther(userShares.noShares))
 
-    if (yesShares === 0 && noShares === 0) return null
+      if (yesShares === 0 && noShares === 0) return null
 
     const totalInvested = yesShares + noShares
     
@@ -43,6 +44,12 @@ export function YourPosition({ market, userShares }: YourPositionProps) {
       hasYes: yesShares > 0,
       hasNo: noShares > 0,
       strongerSide: yesShares > noShares ? 'yes' : noShares > yesShares ? 'no' : 'equal'
+    }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error calculating position:', error)
+      }
+      return null
     }
   }, [userShares, market])
 

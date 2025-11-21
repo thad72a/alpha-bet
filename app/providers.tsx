@@ -8,6 +8,7 @@ import '@rainbow-me/rainbowkit/styles.css'
 import { ToastProvider } from '@/components/Providers'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { SubnetProvider } from '@/components/SubnetProvider'
+import { RPC_POLLING_INTERVAL, RPC_STALL_TIMEOUT, RPC_BATCH_WAIT } from '@/lib/constants'
 
 // Define Bittensor Mainnet (default network)
 const bittensorMainnet: Chain = {
@@ -110,9 +111,9 @@ const { chains, publicClient } = configureChains(
   ],
   {
     // Longer polling interval for contract reads - reduces RPC calls by 87.5%
-    pollingInterval: 30_000, // 30 seconds (from default 4 seconds)
+    pollingInterval: RPC_POLLING_INTERVAL,
     // Increase stall timeout
-    stallTimeout: 10_000, // 10 seconds
+    stallTimeout: RPC_STALL_TIMEOUT,
   }
 )
 

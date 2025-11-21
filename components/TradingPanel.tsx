@@ -10,13 +10,15 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { showErrorToast, showSuccessToast, showLoadingToast, dismissToast } from '@/lib/errorHandling'
 import { BETTING_CONTRACT_ADDRESS, BETTING_ABI } from '@/lib/contracts'
 import { addBetHistory, recordVolumeSnapshot } from '@/lib/supabase'
+import { SUPABASE_WRITE_DELAY, TRANSACTION_RETRY_DELAY } from '@/lib/constants'
 import { AlertCircle, TrendingUp, Info } from 'lucide-react'
 
 interface TradingPanelProps {
   market: any
+  onBetSuccess?: () => void
 }
 
-export function TradingPanel({ market }: TradingPanelProps) {
+export function TradingPanel({ market, onBetSuccess }: TradingPanelProps) {
   const { address, isConnected } = useAccount()
   const [selectedOutcome, setSelectedOutcome] = useState<'yes' | 'no'>('yes')
   const [amount, setAmount] = useState<string>('')
@@ -145,9 +147,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
               txData.hash
             )
             
-            if (betSuccess) {
-              console.log('✅ Bet history saved to Supabase')
-            } else {
+            if (!betSuccess && process.env.NODE_ENV === 'development') {
               console.warn('⚠️ Failed to save bet history - check Supabase config')
             }
 
@@ -159,29 +159,29 @@ export function TradingPanel({ market }: TradingPanelProps) {
               ? noBettedAmount + Number(amount)
               : noBettedAmount
 
-            const volumeSuccess = await recordVolumeSnapshot(
+            await recordVolumeSnapshot(
               market.id,
               newYesVolume.toString(),
               newNoVolume.toString(),
               txData.hash
             )
-            
-            if (volumeSuccess) {
-              console.log('✅ Volume snapshot saved to Supabase')
-            }
 
             // Wait a bit to ensure Supabase write completes
-            await new Promise(resolve => setTimeout(resolve, 500))
+            await new Promise(resolve => setTimeout(resolve, SUPABASE_WRITE_DELAY))
           } catch (err) {
-            console.error('❌ Error saving to Supabase:', err)
+            if (process.env.NODE_ENV === 'development') {
+              console.error('❌ Error saving to Supabase:', err)
+            }
           }
         }
 
         setIsPurchasing(false)
         setAmount('')
         
-        // Refresh page to show updated stats
-        window.location.reload()
+        // Refetch data to show updated stats
+        if (onBetSuccess) {
+          onBetSuccess()
+        }
       }
 
       saveAndReload()
@@ -225,7 +225,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
       setLoadingToastId(toastId)
       
       // Add small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, TRANSACTION_RETRY_DELAY))
       
       purchaseShares()
     } catch (err: any) {

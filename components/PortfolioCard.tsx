@@ -15,7 +15,7 @@ interface PortfolioCardProps {
 
 export function PortfolioCard({ card, userAddress }: PortfolioCardProps) {
   const router = useRouter()
-  const { shares, isLoading } = useUserShares(userAddress, card.id)
+  const { shares, isLoading, isError } = useUserShares(userAddress, card.id)
   
   const position = useMemo(() => {
     if (!shares) return null
@@ -23,6 +23,7 @@ export function PortfolioCard({ card, userAddress }: PortfolioCardProps) {
     const yesShares = Number(formatEther(shares.yesShares || 0n))
     const noShares = Number(formatEther(shares.noShares || 0n))
     
+    // Filter out cards with no position
     if (yesShares === 0 && noShares === 0) return null
     
     const totalInvested = yesShares + noShares
@@ -51,7 +52,14 @@ export function PortfolioCard({ card, userAddress }: PortfolioCardProps) {
   }, [shares, card])
   
   // Don't render if no position
+  // Don't render if loading, error, or no position
   if (isLoading) return null
+  if (isError) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`Error loading shares for card ${card.id}`)
+    }
+    return null
+  }
   if (!position) return null
   
   return (

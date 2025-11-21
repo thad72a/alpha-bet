@@ -99,7 +99,7 @@ export default function Portfolio() {
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold gradient-text mb-2">My Portfolio</h1>
-          <p className="text-white/60">Track your positions and performance</p>
+          <p className="text-white/60">Track your positions and performance across all markets</p>
         </div>
 
         {cardsLoading ? (
@@ -117,7 +117,7 @@ export default function Portfolio() {
               </p>
             </CardContent>
           </Card>
-        ) : userPositions.length === 0 ? (
+        ) : enrichedCards.length === 0 ? (
           <Card className="premium-card">
             <CardContent className="text-center py-16">
               <Target className="w-16 h-16 text-white/40 mx-auto mb-4" />
@@ -140,11 +140,8 @@ export default function Portfolio() {
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
                   <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
-                  Active Markets ({activeCards.length})
+                  Active Markets
                 </h2>
-                <p className="text-white/60 text-sm mb-4">
-                  Only markets where you have positions will be shown below.
-                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {activeCards.map(card => (
                     <PortfolioCard key={card.id} card={card} userAddress={address!} />
@@ -158,7 +155,7 @@ export default function Portfolio() {
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
                   <span className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></span>
-                  Pending Resolution ({pendingCards.length})
+                  Pending Resolution
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {pendingCards.map(card => (
@@ -173,22 +170,13 @@ export default function Portfolio() {
               <div>
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
                   <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
-                  Resolved ({resolvedCards.length})
+                  Resolved
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {resolvedCards.map(card => (
                     <PortfolioCard key={card.id} card={card} userAddress={address!} />
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Note if portfolio loads but has no positions */}
-            {enrichedCards.length > 0 && (
-              <div className="mt-8">
-                <p className="text-white/40 text-sm text-center">
-                  💡 Tip: Only markets where you have positions are displayed. Place bets to see them here!
-                </p>
               </div>
             )}
           </>

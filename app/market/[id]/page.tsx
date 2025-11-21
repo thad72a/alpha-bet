@@ -123,6 +123,13 @@ export default function MarketDetail() {
     }
   }
 
+  // Refetch data after bet or resolution action
+  const handleDataRefresh = () => {
+    refetchCard()
+    refetchShares()
+    loadComments() // Also reload comments as bet activity might generate new ones
+  }
+
   // Calculate market stats
   const market = useMemo(() => {
     if (!card) return null
@@ -523,13 +530,13 @@ export default function MarketDetail() {
               
               {/* Show Resolution Panel if card is past deadline and not resolved */}
               {!market.resolved && Date.now() / 1000 > market.timestamp ? (
-                <ResolutionPanel market={market} />
+                <ResolutionPanel market={market} onResolutionSuccess={handleDataRefresh} />
               ) : (
-                <TradingPanel market={market} />
+                <TradingPanel market={market} onBetSuccess={handleDataRefresh} />
               )}
               
               {/* Always show TradingPanel but make it read-only if resolved */}
-              {market.resolved && <TradingPanel market={market} />}
+              {market.resolved && <TradingPanel market={market} onBetSuccess={handleDataRefresh} />}
             </div>
           </div>
         </div>

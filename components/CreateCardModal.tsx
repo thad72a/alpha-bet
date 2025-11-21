@@ -202,22 +202,26 @@ export function CreateCardModal({ subnets, onClose, onCardCreated }: CreateCardM
     // Check if contract address is set
     if (!BETTING_CONTRACT_ADDRESS) {
       setError('Contract address not configured. Please check your environment variables.')
-      console.error('BETTING_CONTRACT_ADDRESS is:', BETTING_CONTRACT_ADDRESS)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('BETTING_CONTRACT_ADDRESS is:', BETTING_CONTRACT_ADDRESS)
+      }
       return
     }
 
     // Debug info
-    console.log('Contract setup:', {
-      address: BETTING_CONTRACT_ADDRESS,
-      hasConfig: !!config,
-      hasWrite: !!createCard,
-      prepareError: prepareError?.message,
-      args: [
-        selectedSubnet.netuid,
-        parseFloat(bettedPrice),
-        Math.floor(new Date(timestamp).getTime() / 1000)
-      ]
-    })
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Contract setup:', {
+        address: BETTING_CONTRACT_ADDRESS,
+        hasConfig: !!config,
+        hasWrite: !!createCard,
+        prepareError: prepareError?.message,
+        args: [
+          selectedSubnet.netuid,
+          parseFloat(bettedPrice),
+          Math.floor(new Date(timestamp).getTime() / 1000)
+        ]
+      })
+    }
 
     if (!createCard) {
       // Show specific error based on what's wrong
