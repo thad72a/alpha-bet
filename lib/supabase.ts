@@ -26,6 +26,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(url, key)
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
 
+/**
+ * Helper function to safely convert values to strings, handling BigInt
+ * This prevents "TypeError: Do not know how to serialize a BigInt" errors
+ */
+export function safeStringify(value: any): string {
+  if (typeof value === 'bigint') {
+    return value.toString()
+  }
+  if (value && typeof value === 'object') {
+    return JSON.stringify(value, (key, val) => 
+      typeof val === 'bigint' ? val.toString() : val
+    )
+  }
+  return String(value)
+}
+
 // Database Types
 export interface Comment {
   id: string

@@ -138,13 +138,16 @@ export function TradingPanel({ market, onBetSuccess }: TradingPanelProps) {
       const saveAndReload = async () => {
         if (address && txData?.hash) {
           try {
+            // Ensure transaction hash is a string (not BigInt)
+            const txHashString = String(txData.hash)
+            
             // Record individual bet
             const betSuccess = await addBetHistory(
               market.id,
               address,
               selectedOutcome,
               amount,
-              txData.hash
+              txHashString
             )
             
             if (!betSuccess && process.env.NODE_ENV === 'development') {
@@ -163,7 +166,7 @@ export function TradingPanel({ market, onBetSuccess }: TradingPanelProps) {
               market.id,
               newYesVolume.toString(),
               newNoVolume.toString(),
-              txData.hash
+              txHashString
             )
 
             // Wait a bit to ensure Supabase write completes

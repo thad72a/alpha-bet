@@ -133,13 +133,16 @@ export function BettingModal({
       
       // Save to Supabase
       if (address && txData?.hash) {
+        // Ensure transaction hash is a string (not BigInt)
+        const txHashString = String(txData.hash)
+        
         // Record individual bet
         addBetHistory(
           cardId,
           address,
           selectedOutcome,
           amount,
-          txData.hash
+          txHashString
         )
 
         // Record volume snapshot with new cumulative totals
@@ -154,7 +157,7 @@ export function BettingModal({
           cardId,
           newYesVolume.toString(),
           newNoVolume.toString(),
-          txData.hash
+          txHashString
         )
       }
 

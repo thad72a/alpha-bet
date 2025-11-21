@@ -57,6 +57,20 @@ export default function Home() {
       }
     }
   }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (showMoreDropdown) {
+        setShowMoreDropdown(false)
+      }
+    }
+    
+    if (showMoreDropdown) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showMoreDropdown])
   
   // Fetch real data from blockchain and Bittensor network
   const { summaries, lastUpdated } = useSubnetSummaries()
@@ -186,9 +200,9 @@ export default function Home() {
       </header>
 
       {/* Subnet Navigation Tabs */}
-      <div className="relative z-10 glass border-b border-white/10">
+      <div className="relative z-40 glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-1 py-4">
+          <div className="flex items-center space-x-1 py-4 overflow-visible">
             {/* Category filters */}
             <button
               onClick={() => {
@@ -248,9 +262,12 @@ export default function Home() {
             
             {/* More dropdown */}
             {subnets.length > 3 && (
-              <div className="relative">
+              <div className="relative z-50">
                 <button 
-                  onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowMoreDropdown(!showMoreDropdown)
+                  }}
                   className="px-4 py-2 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 whitespace-nowrap"
                 >
                   More
@@ -258,7 +275,10 @@ export default function Home() {
                 </button>
                 
                 {showMoreDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-96 glass border border-white/20 rounded-lg shadow-xl p-4 z-50">
+                  <div 
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-full left-0 mt-2 w-96 glass border border-white/20 rounded-lg shadow-xl p-4 z-[100]"
+                  >
                     <div className="grid grid-cols-3 gap-2">
                       {subnets.slice(3).map((subnet) => (
                         <button

@@ -135,12 +135,15 @@ export function MultiOptionBettingModal({
       
       // Save to Supabase
       if (address && txData?.hash) {
+        // Ensure transaction hash is a string (not BigInt)
+        const txHashString = String(txData.hash)
+        
         addBetHistory(
           cardId,
           address,
           'option',
           amount,
-          txData.hash,
+          txHashString,
           selectedOptionIndex
         )
       }
