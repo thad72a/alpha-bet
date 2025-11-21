@@ -102,16 +102,19 @@ export async function addComment(
   text: string,
   parentId?: string
 ): Promise<Comment | null> {
+  // Ensure all values are safe for JSON serialization (handle BigInt)
+  const safeData = {
+    card_id: Number(cardId),
+    user_address: String(userAddress),
+    text: String(text),
+    parent_id: parentId ? String(parentId) : null,
+    created_at: new Date().toISOString(),
+    likes: 0
+  }
+  
   const { data, error } = await supabase
     .from('comments')
-    .insert({
-      card_id: cardId,
-      user_address: userAddress,
-      text: text,
-      parent_id: parentId || null,
-      created_at: new Date().toISOString(),
-      likes: 0
-    })
+    .insert(safeData)
     .select()
     .single()
 
@@ -243,17 +246,20 @@ export async function addBetHistory(
   }
 
   try {
+    // Ensure all values are safe for JSON serialization (handle BigInt)
+    const safeData = {
+      card_id: Number(cardId),
+      user_address: String(userAddress),
+      bet_type: betType,
+      option_index: optionIndex !== undefined ? Number(optionIndex) : null,
+      amount: String(amount),
+      tx_hash: String(txHash),
+      timestamp: new Date().toISOString()
+    }
+    
     const { error } = await supabase
       .from('user_bet_history')
-      .insert({
-        card_id: cardId,
-        user_address: userAddress,
-        bet_type: betType,
-        option_index: optionIndex,
-        amount: amount,
-        tx_hash: txHash,
-        timestamp: new Date().toISOString()
-      })
+      .insert(safeData)
 
     if (error) {
       console.error('Error adding bet history:', error)
@@ -312,15 +318,18 @@ export async function recordVolumeSnapshot(
     return false
   }
 
+  // Ensure all values are safe for JSON serialization (handle BigInt)
+  const safeData = {
+    card_id: Number(cardId),
+    yes_volume: String(yesVolume),
+    no_volume: String(noVolume),
+    tx_hash: String(txHash),
+    timestamp: new Date().toISOString()
+  }
+
   const { error } = await supabase
     .from('card_volume_snapshots')
-    .insert({
-      card_id: cardId,
-      yes_volume: yesVolume,
-      no_volume: noVolume,
-      tx_hash: txHash,
-      timestamp: new Date().toISOString()
-    })
+    .insert(safeData)
 
   if (error) {
     console.error('Error recording volume snapshot:', error)

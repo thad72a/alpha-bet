@@ -42004,3 +42004,71 @@ ReferenceError: Headers is not defined
     at Module.load (internal/modules/cjs/loader.js:863:32)
     at Function.Module._load (internal/modules/cjs/loader.js:708:14)
     at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (12) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:12
+    return Headers;
+    ^
+
+ReferenceError: Headers is not defined
+    at resolveHeadersConstructor (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:12:5)
+    at fetchWithAuth (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:17:70)
+    at new SupabaseClient (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/SupabaseClient.js:64:48)
+    at createClient (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/index.js:38:12)
+    at Object.<anonymous> (/home/unicorn/alpha-bet/scripts/price-tracker-cron.js:33:18)
+    at Module._compile (internal/modules/cjs/loader.js:999:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1027:10)
+    at Module.load (internal/modules/cjs/loader.js:863:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:708:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (12) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:12
+    return Headers;
+    ^
+
+ReferenceError: Headers is not defined
+    at resolveHeadersConstructor (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:12:5)
+    at fetchWithAuth (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:17:70)
+    at new SupabaseClient (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/SupabaseClient.js:64:48)
+    at createClient (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/index.js:38:12)
+    at Object.<anonymous> (/home/unicorn/alpha-bet/scripts/price-tracker-cron.js:33:18)
+    at Module._compile (internal/modules/cjs/loader.js:999:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1027:10)
+    at Module.load (internal/modules/cjs/loader.js:863:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:708:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (12) from .env.local -- tip: ⚙️  override existing env vars with { override: true }
+/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:12
+    return Headers;
+    ^
+
+ReferenceError: Headers is not defined
+    at resolveHeadersConstructor (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:12:5)
+    at fetchWithAuth (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:17:70)
+    at new SupabaseClient (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/SupabaseClient.js:64:48)
+    at createClient (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/index.js:38:12)
+    at Object.<anonymous> (/home/unicorn/alpha-bet/scripts/price-tracker-cron.js:33:18)
+    at Module._compile (internal/modules/cjs/loader.js:999:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1027:10)
+    at Module.load (internal/modules/cjs/loader.js:863:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:708:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.3] injecting env (12) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:12
+    return Headers;
+    ^
+
+ReferenceError: Headers is not defined
+    at resolveHeadersConstructor (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:12:5)
+    at fetchWithAuth (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/lib/fetch.js:17:70)
+    at new SupabaseClient (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/SupabaseClient.js:64:48)
+    at createClient (/home/unicorn/alpha-bet/node_modules/@supabase/supabase-js/dist/main/index.js:38:12)
+    at Object.<anonymous> (/home/unicorn/alpha-bet/scripts/price-tracker-cron.js:33:18)
+    at Module._compile (internal/modules/cjs/loader.js:999:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1027:10)
+    at Module.load (internal/modules/cjs/loader.js:863:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:708:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:60:12)

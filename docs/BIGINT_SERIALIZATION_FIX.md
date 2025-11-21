@@ -1,6 +1,6 @@
-# BigInt Serialization Fix
+# BigInt Serialization & Hydration Fixes
 
-## Problem
+## Problem 1: BigInt Serialization
 
 JavaScript's native `JSON.stringify()` cannot serialize `BigInt` values, which caused runtime errors when trying to save blockchain transaction data to Supabase:
 
@@ -8,6 +8,15 @@ JavaScript's native `JSON.stringify()` cannot serialize `BigInt` values, which c
 TypeError: Do not know how to serialize a BigInt
   at JSON.stringify (<anonymous>)
   at PostgrestFilterBuilder.then (...)
+```
+
+## Problem 2: React Hydration Errors
+
+React minified errors #418 and #423 were occurring due to server/client mismatch when using `Date.now()` during render, causing:
+
+```
+Uncaught Error: Minified React error #418
+Uncaught Error: Minified React error #423
 ```
 
 ## Root Cause
@@ -19,9 +28,11 @@ Blockchain transaction data from `wagmi` hooks (like `useWaitForTransaction`) re
 - `components/BettingModal.tsx` - Same issue
 - `components/MultiOptionBettingModal.tsx` - Same issue
 
-## Solution
+## Solutions
 
-### 1. Explicit String Conversion
+### BigInt Serialization Fix
+
+#### 1. Explicit String Conversion in Components
 
 Convert transaction hashes to strings before passing to Supabase functions:
 
@@ -34,7 +45,26 @@ const txHashString = String(txData.hash)
 addBetHistory(cardId, address, outcome, amount, txHashString)
 ```
 
-### 2. Safe Stringify Utility
+#### 2. Safe Data Sanitization in Supabase Functions
+
+Added type conversion directly in Supabase functions to handle ALL potential BigInt values:
+
+```typescript
+// In addBetHistory()
+const safeData = {
+  card_id: Number(cardId),
+  user_address: String(userAddress),
+  bet_type: betType,
+  option_index: optionIndex !== undefined ? Number(optionIndex) : null,
+  amount: String(amount),
+  tx_hash: String(txHash),
+  timestamp: new Date().toISOString()
+}
+
+await supabase.from('user_bet_history').insert(safeData)
+```
+
+#### 3. Safe Stringify Utility
 
 Added a `safeStringify()` helper function in `lib/supabase.ts` for future-proofing:
 
@@ -52,6 +82,25 @@ export function safeStringify(value: any): string {
 }
 ```
 
+### Hydration Fix
+
+Fixed server/client rendering mismatch in `BettingCard.tsx`:
+
+```typescript
+// Before (Hydration Error)
+const isExpired = Date.now() / 1000 > card.timestamp
+
+// After (Fixed)
+const [isMounted, setIsMounted] = useState(false)
+
+useEffect(() => {
+  setIsMounted(true)
+}, [])
+
+// Only calculate time-based values on client
+const isExpired = isMounted ? Date.now() / 1000 > card.timestamp : false
+```
+
 ## Files Modified
 
 1. **components/TradingPanel.tsx**
@@ -59,13 +108,21 @@ export function safeStringify(value: any): string {
    - Updated both `addBetHistory()` and `recordVolumeSnapshot()` calls
 
 2. **components/BettingModal.tsx**
-   - Same fix applied
+   - Same BigInt fix applied
 
 3. **components/MultiOptionBettingModal.tsx**
-   - Same fix applied
+   - Same BigInt fix applied
 
 4. **lib/supabase.ts**
-   - Added `safeStringify()` utility function for general use
+   - Added `safeStringify()` utility function
+   - **CRITICAL**: Added type conversion in `addBetHistory()`, `recordVolumeSnapshot()`, and `addComment()`
+   - All numeric values converted with `Number()`
+   - All string values converted with `String()`
+   - Handles `optionIndex` and `parentId` nullable fields
+
+5. **components/BettingCard.tsx**
+   - Added `isMounted` state to prevent hydration mismatch
+   - Guarded `Date.now()` calculations with `isMounted` check
 
 ## Prevention
 
@@ -77,11 +134,24 @@ To prevent similar issues in the future:
 
 ## Testing
 
-Build passes successfully after fix:
+Build passes successfully after all fixes:
 ```bash
 npm run build
 # ✓ Compiled successfully
 ```
 
-The error should no longer appear in browser console when placing bets.
+Expected results:
+- ✅ No more BigInt serialization errors when placing bets
+- ✅ No more React hydration errors (#418, #423)
+- ✅ Supabase bet history saves correctly
+- ✅ Cards render properly without server/client mismatch
+
+## Summary
+
+The complete fix required:
+1. **Converting all transaction hashes** from potential BigInt to string in components
+2. **Sanitizing ALL data** at the Supabase function level with explicit type conversions
+3. **Guarding time-based calculations** with `isMounted` checks to prevent hydration mismatches
+
+This two-layer approach (component-level + Supabase-level) ensures no BigInt values can slip through, even if new code is added later.
 

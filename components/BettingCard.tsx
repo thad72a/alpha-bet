@@ -35,7 +35,13 @@ export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: Be
   const [initialOutcome, setInitialOutcome] = useState<'yes' | 'no'>('yes')
   const [subnetName, setSubnetName] = useState<string | null>(null)
   const [subnetPrice, setSubnetPrice] = useState<number | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
   const subnetInfo = useSubnet(card.netuid)
+  
+  // Fix hydration: Only calculate time-based values on client
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
   
   const cardId = `#${card.id.toString().padStart(6, '0')}`
   
@@ -52,7 +58,8 @@ export function BettingCard({ card, isBookmarked = false, onToggleBookmark }: Be
     e.stopPropagation()
   }
   
-  const isExpired = Date.now() / 1000 > card.timestamp
+  // Use isMounted to prevent hydration mismatch with Date.now()
+  const isExpired = isMounted ? Date.now() / 1000 > card.timestamp : false
   const canBet = !card.resolved && !isExpired
 
   // Calculate betted amounts
