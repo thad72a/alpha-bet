@@ -79,7 +79,7 @@ contract BettingCard is ReentrancyGuard, Ownable {
 
     // Resolution system parameters
     uint256 public resolutionBond = 10 ether;      // 10 TAO required to propose resolution
-    uint256 public disputePeriod = 48 hours;       // Time window to dispute a proposal
+    uint256 public disputePeriod = 24 hours;       // Time window to dispute a proposal (reduced from 48h)
     uint256 public votingPeriod = 24 hours;        // Voting duration if disputed
 
     mapping(uint256 => Card) public cards;

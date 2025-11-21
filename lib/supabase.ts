@@ -221,24 +221,34 @@ export async function addBetHistory(
   txHash: string,
   optionIndex?: number
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from('user_bet_history')
-    .insert({
-      card_id: cardId,
-      user_address: userAddress,
-      bet_type: betType,
-      option_index: optionIndex,
-      amount: amount,
-      tx_hash: txHash,
-      timestamp: new Date().toISOString()
-    })
-
-  if (error) {
-    console.error('Error adding bet history:', error)
+  if (!isSupabaseConfigured) {
+    console.warn('⚠️ Supabase not configured - bet history not saved')
     return false
   }
 
-  return true
+  try {
+    const { error } = await supabase
+      .from('user_bet_history')
+      .insert({
+        card_id: cardId,
+        user_address: userAddress,
+        bet_type: betType,
+        option_index: optionIndex,
+        amount: amount,
+        tx_hash: txHash,
+        timestamp: new Date().toISOString()
+      })
+
+    if (error) {
+      console.error('Error adding bet history:', error)
+      return false
+    }
+
+    return true
+  } catch (err) {
+    console.error('Exception in addBetHistory:', err)
+    return false
+  }
 }
 
 export async function getUserBetHistory(

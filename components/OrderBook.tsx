@@ -20,6 +20,7 @@ export function OrderBook({ market }: OrderBookProps) {
       try {
         // Fetch recent bets for this card (no user filter = all bets)
         const bets = await getUserBetHistory('', market.id)
+        console.log(`📊 Fetched ${bets.length} recent bets for card ${market.id}`)
         setRecentBets(bets.slice(0, 10)) // Show last 10 bets
       } catch (error) {
         console.error('Error fetching recent bets:', error)

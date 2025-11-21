@@ -132,38 +132,59 @@ export function TradingPanel({ market }: TradingPanelProps) {
       setLoadingToastId(null)
       showSuccessToast(`Successfully bet ${amount} TAO on ${selectedOutcome.toUpperCase()}!`)
       
-      // Save to Supabase
-      if (address && txData?.hash) {
-        // Record individual bet
-        addBetHistory(
-          market.id,
-          address,
-          selectedOutcome,
-          amount,
-          txData.hash
-        )
+      // Save to Supabase and wait before reloading
+      const saveAndReload = async () => {
+        if (address && txData?.hash) {
+          try {
+            // Record individual bet
+            const betSuccess = await addBetHistory(
+              market.id,
+              address,
+              selectedOutcome,
+              amount,
+              txData.hash
+            )
+            
+            if (betSuccess) {
+              console.log('✅ Bet history saved to Supabase')
+            } else {
+              console.warn('⚠️ Failed to save bet history - check Supabase config')
+            }
 
-        // Record volume snapshot with new cumulative totals
-        const newYesVolume = selectedOutcome === 'yes' 
-          ? yesBettedAmount + Number(amount)
-          : yesBettedAmount
-        const newNoVolume = selectedOutcome === 'no'
-          ? noBettedAmount + Number(amount)
-          : noBettedAmount
+            // Record volume snapshot with new cumulative totals
+            const newYesVolume = selectedOutcome === 'yes' 
+              ? yesBettedAmount + Number(amount)
+              : yesBettedAmount
+            const newNoVolume = selectedOutcome === 'no'
+              ? noBettedAmount + Number(amount)
+              : noBettedAmount
 
-        recordVolumeSnapshot(
-          market.id,
-          newYesVolume.toString(),
-          newNoVolume.toString(),
-          txData.hash
-        )
+            const volumeSuccess = await recordVolumeSnapshot(
+              market.id,
+              newYesVolume.toString(),
+              newNoVolume.toString(),
+              txData.hash
+            )
+            
+            if (volumeSuccess) {
+              console.log('✅ Volume snapshot saved to Supabase')
+            }
+
+            // Wait a bit to ensure Supabase write completes
+            await new Promise(resolve => setTimeout(resolve, 500))
+          } catch (err) {
+            console.error('❌ Error saving to Supabase:', err)
+          }
+        }
+
+        setIsPurchasing(false)
+        setAmount('')
+        
+        // Refresh page to show updated stats
+        window.location.reload()
       }
 
-      setIsPurchasing(false)
-      setAmount('')
-      
-      // Refresh page to show updated stats
-      window.location.reload()
+      saveAndReload()
     }
   }, [isConfirmed, loadingToastId, selectedOutcome, amount, address, txData, market.id, yesBettedAmount, noBettedAmount])
 
