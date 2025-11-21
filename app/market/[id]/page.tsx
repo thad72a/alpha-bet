@@ -151,8 +151,10 @@ export default function MarketDetail() {
       currentAlphaPrice: subnetData?.price || 0,
       timestamp: Number(card.timestamp),
       creator: card.creator,
-      totalYesShares: yesPercentage,
-      totalNoShares: noPercentage,
+      totalYesShares: totalYes,        // BUG FIX: Use actual TAO amount, not percentage
+      totalNoShares: totalNo,          // BUG FIX: Use actual TAO amount, not percentage
+      yesPercentage: yesPercentage,    // ADD: Keep percentage for display
+      noPercentage: noPercentage,      // ADD: Keep percentage for display
       totalLiquidity: totalLiquidity,
       volume: totalLiquidity, // Simplified - would need historical data for accurate volume
       resolved: card.resolved,

@@ -39,9 +39,9 @@ export function TradingPanel({ market, onBetSuccess }: TradingPanelProps) {
     setAmount(preset.toString())
   }
 
-  // Get current shares from market (already in percentage format from market detail page)
-  const currentYesProb = market.totalYesShares || 50
-  const currentNoProb = market.totalNoShares || 50
+  // Get current percentages from market for probability display
+  const currentYesProb = market.yesPercentage || 50
+  const currentNoProb = market.noPercentage || 50
 
   // Calculate total shares in wei for ROI calculation
   // Need to convert back from percentage to actual shares

@@ -436,13 +436,15 @@ export default function Home() {
                 <option value="ending-soon">Ending Soon</option>
                 <option value="newest">Newest</option>
               </select>
-              <Button 
-                onClick={() => setShowCreateModal(true)}
-                className="btn-primary"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Create Market
-              </Button>
+              {isConnected && (
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="btn-primary"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Create Market
+                </Button>
+              )}
             </div>
           </div>
           
