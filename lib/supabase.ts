@@ -257,11 +257,21 @@ export async function addBetHistory(
       timestamp: new Date().toISOString()
     }
     
+    // Use upsert to handle duplicates gracefully
+    // If tx_hash already exists, do nothing (ignore duplicate)
     const { error } = await supabase
       .from('user_bet_history')
-      .insert(safeData)
+      .upsert(safeData, { 
+        onConflict: 'tx_hash',
+        ignoreDuplicates: true 
+      })
 
     if (error) {
+      // Log error but don't fail if it's just a duplicate
+      if (error.code === '23505') { // PostgreSQL unique violation code
+        console.log('ℹ️ Bet already recorded (duplicate tx_hash):', txHash)
+        return true // Return success since the bet is already recorded
+      }
       console.error('Error adding bet history:', error)
       return false
     }
@@ -318,25 +328,35 @@ export async function recordVolumeSnapshot(
     return false
   }
 
-  // Ensure all values are safe for JSON serialization (handle BigInt)
-  const safeData = {
-    card_id: Number(cardId),
-    yes_volume: String(yesVolume),
-    no_volume: String(noVolume),
-    tx_hash: String(txHash),
-    timestamp: new Date().toISOString()
-  }
+  try {
+    // Ensure all values are safe for JSON serialization (handle BigInt)
+    const safeData = {
+      card_id: Number(cardId),
+      yes_volume: String(yesVolume),
+      no_volume: String(noVolume),
+      tx_hash: String(txHash),
+      timestamp: new Date().toISOString()
+    }
 
-  const { error } = await supabase
-    .from('card_volume_snapshots')
-    .insert(safeData)
+    const { error } = await supabase
+      .from('card_volume_snapshots')
+      .insert(safeData)
 
-  if (error) {
-    console.error('Error recording volume snapshot:', error)
+    if (error) {
+      // If it's a duplicate, just log and return success
+      if (error.code === '23505') {
+        console.log('ℹ️ Volume snapshot already recorded for tx:', txHash)
+        return true
+      }
+      console.error('Error recording volume snapshot:', error)
+      return false
+    }
+
+    return true
+  } catch (err) {
+    console.error('Exception in recordVolumeSnapshot:', err)
     return false
   }
-
-  return true
 }
 
 export async function getVolumeHistory(

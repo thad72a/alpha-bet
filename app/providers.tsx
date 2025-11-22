@@ -22,10 +22,10 @@ const bittensorMainnet: Chain = {
   },
   rpcUrls: {
     default: {
-      http: ['https://lite.chain.opentensor.ai'],
+      http: [process.env.NEXT_PUBLIC_LITE_CHAIN_RPC_URL || 'https://lite.chain.opentensor.ai'],
     },
     public: {
-      http: ['https://lite.chain.opentensor.ai'],
+      http: [process.env.NEXT_PUBLIC_LITE_CHAIN_RPC_URL || 'https://lite.chain.opentensor.ai'],
     },
   },
   blockExplorers: {
@@ -49,10 +49,10 @@ const bittensorTestnet: Chain = {
   },
   rpcUrls: {
     default: {
-      http: ['https://test.chain.opentensor.ai'],
+      http: [process.env.NEXT_PUBLIC_TEST_CHAIN_RPC_URL || 'https://test.chain.opentensor.ai'],
     },
     public: {
-      http: ['https://test.chain.opentensor.ai'],
+      http: [process.env.NEXT_PUBLIC_TEST_CHAIN_RPC_URL || 'https://test.chain.opentensor.ai'],
     },
   },
   blockExplorers: {
@@ -99,13 +99,13 @@ const { chains, publicClient } = configureChains(
     jsonRpcProvider({
       rpc: (chain) => {
         if (chain.id === 966) {
-          return { http: 'https://lite.chain.opentensor.ai' }
+          return { http: process.env.NEXT_PUBLIC_LITE_CHAIN_RPC_URL || 'https://lite.chain.opentensor.ai' }
         } else if (chain.id === 945) {
-          return { http: 'https://test.chain.opentensor.ai' }
+          return { http: process.env.NEXT_PUBLIC_TEST_CHAIN_RPC_URL || 'https://test.chain.opentensor.ai' }
         } else if (chain.id === 1337) {
           return { http: process.env.NEXT_PUBLIC_RPC_URL || 'http://127.0.0.1:8545' }
         }
-        return { http: 'https://lite.chain.opentensor.ai' } // Fallback to mainnet
+        return { http: process.env.NEXT_PUBLIC_LITE_CHAIN_RPC_URL || 'https://lite.chain.opentensor.ai' } // Fallback to mainnet
       },
     }),
   ],

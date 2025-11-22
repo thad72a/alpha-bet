@@ -277,9 +277,9 @@ export default function Home() {
                 {showMoreDropdown && (
                   <div 
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute top-full left-0 mt-2 w-96 glass border border-white/20 rounded-lg shadow-xl p-4 z-[100]"
+                    className="absolute top-full left-0 mt-2 w-96 bg-black border border-white/20 rounded-lg shadow-xl p-3 z-[100]"
                   >
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-1.5">
                       {subnets.slice(3).map((subnet) => (
                         <button
                           key={subnet.netuid}
@@ -287,14 +287,14 @@ export default function Home() {
                             setSelectedSubnet(subnet.netuid)
                             setShowMoreDropdown(false)
                           }}
-                          className={`p-3 rounded-lg text-sm font-medium text-center transition-all ${
+                          className={`p-2 rounded-lg text-xs font-medium text-center transition-all ${
                             selectedSubnet === subnet.netuid
                               ? 'bg-white/20 text-white border border-white/40'
                               : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                           }`}
                         >
-                          <div className="font-bold">Subnet {subnet.netuid}</div>
-                          <div className="text-xs opacity-60">{subnet.name}</div>
+                          <div className="font-bold text-sm">Subnet {subnet.netuid}</div>
+                          <div className="text-xs opacity-60 truncate">{subnet.name}</div>
                         </button>
                       ))}
                     </div>
